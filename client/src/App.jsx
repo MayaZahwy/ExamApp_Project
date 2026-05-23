@@ -1,121 +1,146 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
+import { useEffect, useMemo, useState } from 'react'
 import './App.css'
+import NavigationMenu from './components/NavigationMenu'
+import LoginPage from './pages/auth/LoginPage'
+import RegisterPage from './pages/auth/RegisterPage'
+import StudentDashboard from './pages/student/StudentDashboard'
+import TeacherDashboard from './pages/teacher/TeacherDashboard'
+import { authService, notifyService } from './services'
+
+function getRouteFromHash() {
+  return window.location.hash.replace('#', '') || '/login'
+}
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [currentUser, setCurrentUser] = useState(() =>
+    authService.getCurrentUser(),
+  )
+  const [route, setRoute] = useState(getRouteFromHash)
+  const [notification, setNotification] = useState(null)
+
+  useEffect(() => {
+    function handleHashChange() {
+      setRoute(getRouteFromHash())
+    }
+
+    window.addEventListener('hashchange', handleHashChange)
+    return () => window.removeEventListener('hashchange', handleHashChange)
+  }, [])
+
+  useEffect(() => {
+    return notifyService.subscribe((nextNotification) => {
+      setNotification(nextNotification)
+    })
+  }, [])
+
+  useEffect(() => {
+    if (!notification) {
+      return undefined
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setNotification(null)
+    }, 3000)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [notification])
+
+  const protectedRoute = useMemo(() => {
+    if (route === '/teacher' || route === '/student') {
+      return route
+    }
+
+    return null
+  }, [route])
+
+  const authRoute = useMemo(() => {
+    if (route === '/login' || route === '/register') {
+      return route
+    }
+
+    return null
+  }, [route])
+
+  useEffect(() => {
+    if (!currentUser && protectedRoute) {
+      navigate('/login')
+      return
+    }
+
+    if (
+      currentUser &&
+      (authRoute || protectedRoute !== authService.getRedirectPath(currentUser))
+    ) {
+      navigate(authService.getRedirectPath(currentUser))
+    }
+  }, [authRoute, currentUser, protectedRoute])
+
+  function navigate(path) {
+    window.location.hash = path
+    setRoute(path)
+  }
+
+  async function handleLogin(credentials) {
+    try {
+      const user = await authService.login(credentials)
+      setCurrentUser(user)
+      notifyService.success('Signed in successfully.')
+      navigate(authService.getRedirectPath(user))
+    } catch (error) {
+      notifyService.error(error.message)
+    }
+  }
+
+  async function handleRegister(registrationData) {
+    try {
+      const user = await authService.register(registrationData)
+      setCurrentUser(user)
+      notifyService.success('Account created successfully.')
+      navigate(authService.getRedirectPath(user))
+    } catch (error) {
+      notifyService.error(error.message)
+    }
+  }
+
+  function handleLogout() {
+    authService.logout()
+    setCurrentUser(null)
+    notifyService.success('Logged out successfully.')
+    navigate('/login')
+  }
+
+  function renderPage() {
+    if (route === '/register' && !currentUser) {
+      return <RegisterPage onNavigate={navigate} onRegister={handleRegister} />
+    }
+
+    if (route === '/teacher' && currentUser?.role === 'teacher') {
+      return <TeacherDashboard />
+    }
+
+    if (route === '/student' && currentUser?.role === 'student') {
+      return <StudentDashboard />
+    }
+
+    return <LoginPage onLogin={handleLogin} onNavigate={navigate} />
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div className="app-shell">
+      <NavigationMenu
+        currentUser={currentUser}
+        onLogout={handleLogout}
+        onNavigate={navigate}
+      />
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+      {notification && (
+        <div className={`notification notification-${notification.type}`}>
+          {notification.message}
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+      )}
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+      {renderPage()}
+    </div>
   )
 }
 
