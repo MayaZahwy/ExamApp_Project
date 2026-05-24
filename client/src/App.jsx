@@ -1,26 +1,19 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import './App.css'
 import NavigationMenu from './components/NavigationMenu'
-import LoginPage from './pages/auth/LoginPage'
-import RegisterPage from './pages/auth/RegisterPage'
-import StudentDashboard from './pages/student/StudentDashboard'
-import TeacherDashboard from './pages/teacher/TeacherDashboard'
+import { routeService } from './routes'
 import { authService, notifyService } from './services'
-
-function getRouteFromHash() {
-  return window.location.hash.replace('#', '') || '/login'
-}
 
 function App() {
   const [currentUser, setCurrentUser] = useState(() =>
     authService.getCurrentUser(),
   )
-  const [route, setRoute] = useState(getRouteFromHash)
+  const [route, setRoute] = useState(() => routeService.getRouteFromHash())
   const [notification, setNotification] = useState(null)
 
   useEffect(() => {
     function handleHashChange() {
-      setRoute(getRouteFromHash())
+      setRoute(routeService.getRouteFromHash())
     }
 
     window.addEventListener('hashchange', handleHashChange)
@@ -45,38 +38,16 @@ function App() {
     return () => window.clearTimeout(timeoutId)
   }, [notification])
 
-  const protectedRoute = useMemo(() => {
-    if (route === '/teacher' || route === '/student') {
-      return route
-    }
-
-    return null
-  }, [route])
-
-  const authRoute = useMemo(() => {
-    if (route === '/login' || route === '/register') {
-      return route
-    }
-
-    return null
-  }, [route])
-
   useEffect(() => {
-    if (!currentUser && protectedRoute) {
-      navigate('/login')
-      return
-    }
+    const redirectPath = routeService.getRedirectPath(route, currentUser)
 
-    if (
-      currentUser &&
-      (authRoute || protectedRoute !== authService.getRedirectPath(currentUser))
-    ) {
-      navigate(authService.getRedirectPath(currentUser))
+    if (redirectPath && redirectPath !== route) {
+      navigate(redirectPath)
     }
-  }, [authRoute, currentUser, protectedRoute])
+  }, [currentUser, route])
 
   function navigate(path) {
-    window.location.hash = path
+    routeService.navigate(path)
     setRoute(path)
   }
 
@@ -110,19 +81,23 @@ function App() {
   }
 
   function renderPage() {
-    if (route === '/register' && !currentUser) {
-      return <RegisterPage onNavigate={navigate} onRegister={handleRegister} />
+    const resolvedRoute = routeService.resolve(route, currentUser)
+
+    if (!resolvedRoute || resolvedRoute.redirectPath) {
+      return null
     }
 
-    if (route === '/teacher' && currentUser?.role === 'teacher') {
-      return <TeacherDashboard />
-    }
+    const { route: routeConfig, params } = resolvedRoute
+    const PageComponent = routeConfig.Component
 
-    if (route === '/student' && currentUser?.role === 'student') {
-      return <StudentDashboard />
-    }
-
-    return <LoginPage onLogin={handleLogin} onNavigate={navigate} />
+    return (
+      <PageComponent
+        onLogin={handleLogin}
+        onNavigate={navigate}
+        onRegister={handleRegister}
+        params={params}
+      />
+    )
   }
 
   return (
