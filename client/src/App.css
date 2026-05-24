@@ -303,6 +303,53 @@
   color: #667085;
 }
 
+.row-actions,
+.status-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.status-panel {
+  display: grid;
+  gap: 20px;
+}
+
+.status-panel h2 {
+  margin: 0 0 6px;
+  color: #101828;
+}
+
+.status-panel p {
+  color: #667085;
+}
+
+.status-badge {
+  display: inline-flex;
+  width: fit-content;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.status-draft {
+  background: #eef2f7;
+  color: #344054;
+}
+
+.status-published {
+  background: #dcfae6;
+  color: #067647;
+}
+
+.status-closed {
+  background: #fee4e2;
+  color: #b42318;
+}
+
 .exam-form label {
   display: grid;
   gap: 7px;

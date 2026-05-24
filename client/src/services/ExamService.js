@@ -26,6 +26,15 @@ class ExamService {
     return this.attachQuestions(exam, questions)
   }
 
+  async getAvailableExams() {
+    const exams = await this.mockApiService.getAll('exams')
+    const questions = await this.mockApiService.getAll('questions')
+
+    return exams
+      .filter((exam) => exam.status === 'published')
+      .map((exam) => this.attachQuestions(exam, questions))
+  }
+
   async createExam(teacherId, examData) {
     const examId = crypto.randomUUID()
     const questions = this.buildQuestions(examId, examData.questions)
@@ -77,6 +86,43 @@ class ExamService {
     ])
 
     return this.attachQuestions(updatedExam, nextQuestions)
+  }
+
+  async updateStatus(examId, teacherId, nextStatus) {
+    const exam = await this.getExamForTeacher(examId, teacherId)
+
+    if (!exam) {
+      throw new Error('Exam was not found.')
+    }
+
+    if (!this.canChangeStatus(exam.status, nextStatus)) {
+      throw new Error('This status change is not allowed.')
+    }
+
+    const updatedExam = await this.mockApiService.update('exams', examId, {
+      status: nextStatus,
+    })
+    const questions = await this.mockApiService.getAll('questions')
+
+    return this.attachQuestions(updatedExam, questions)
+  }
+
+  getNextStatusOptions(status) {
+    if (status === 'draft') {
+      return [{ label: 'Publish', status: 'published' }]
+    }
+
+    if (status === 'published') {
+      return [{ label: 'Close', status: 'closed' }]
+    }
+
+    return []
+  }
+
+  canChangeStatus(currentStatus, nextStatus) {
+    return this.getNextStatusOptions(currentStatus).some(
+      (option) => option.status === nextStatus,
+    )
   }
 
   attachQuestions(exam, questions) {
