@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { examService } from '../../services'
 
-function AvailableExamsPage() {
+function AvailableExamsPage({ onNavigate }) {
   const [exams, setExams] = useState([])
 
   useEffect(() => {
@@ -30,6 +30,12 @@ function AvailableExamsPage() {
                   <p>{exam.description || 'No description provided.'}</p>
                   <span>{exam.questions.length} questions</span>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => onNavigate(`/student/take-exam/${exam.id}`)}
+                >
+                  Open
+                </button>
               </article>
             ))}
           </div>

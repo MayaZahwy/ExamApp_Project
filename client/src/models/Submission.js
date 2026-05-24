@@ -5,6 +5,8 @@ class Submission {
     studentId,
     answers,
     score,
+    maxScore,
+    percentage,
     submittedAt,
     status,
   }) {
@@ -13,6 +15,8 @@ class Submission {
     this.studentId = studentId
     this.answers = answers
     this.score = score
+    this.maxScore = maxScore
+    this.percentage = percentage
     this.submittedAt = submittedAt
     this.status = status
   }

@@ -35,6 +35,17 @@ class ExamService {
       .map((exam) => this.attachQuestions(exam, questions))
   }
 
+  async getAvailableExamById(examId) {
+    const exam = await this.mockApiService.getById('exams', examId)
+
+    if (!exam || exam.status !== 'published') {
+      return null
+    }
+
+    const questions = await this.mockApiService.getAll('questions')
+    return this.attachQuestions(exam, questions)
+  }
+
   async createExam(teacherId, examData) {
     const examId = crypto.randomUUID()
     const questions = this.buildQuestions(examId, examData.questions)
