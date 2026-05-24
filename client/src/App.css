@@ -411,6 +411,47 @@
   font-weight: 700;
 }
 
+.exam-taking-form {
+  display: grid;
+  gap: 18px;
+}
+
+.take-question {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  border: 1px solid #dde2ea;
+  border-radius: 8px;
+  padding: 18px;
+}
+
+.take-question legend {
+  color: #101828;
+  font-weight: 700;
+  padding: 0 6px;
+}
+
+.take-question label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #344054;
+}
+
+.result-panel {
+  display: grid;
+  gap: 12px;
+  max-width: 520px;
+  margin: 40px auto;
+  text-align: center;
+}
+
+.result-panel strong {
+  color: #101828;
+  font-size: 52px;
+  line-height: 1;
+}
+
 @media (max-width: 640px) {
   .navigation-menu {
     align-items: flex-start;
