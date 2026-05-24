@@ -92,6 +92,7 @@ function App() {
 
     return (
       <PageComponent
+        currentUser={currentUser}
         onLogin={handleLogin}
         onNavigate={navigate}
         onRegister={handleRegister}
