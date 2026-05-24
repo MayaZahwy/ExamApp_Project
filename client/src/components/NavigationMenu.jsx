@@ -1,4 +1,4 @@
-function NavigationMenu({ currentUser, onLogout, onNavigate }) {
+function NavigationMenu({ currentRoute, currentUser, onLogout, onNavigate }) {
   const guestLinks = [
     { label: 'Login', path: '/login' },
     { label: 'Register', path: '/register' },
@@ -37,6 +37,7 @@ function NavigationMenu({ currentUser, onLogout, onNavigate }) {
 
         {links.map((link) => (
           <button
+            className={currentRoute === link.path ? 'active-nav-link' : ''}
             key={link.path}
             type="button"
             onClick={() => onNavigate(link.path)}

@@ -105,12 +105,16 @@ function App() {
     <div className="app-shell">
       <NavigationMenu
         currentUser={currentUser}
+        currentRoute={route}
         onLogout={handleLogout}
         onNavigate={navigate}
       />
 
       {notification && (
-        <div className={`notification notification-${notification.type}`}>
+        <div
+          className={`notification notification-${notification.type}`}
+          role={notification.type === 'error' ? 'alert' : 'status'}
+        >
           {notification.message}
         </div>
       )}
