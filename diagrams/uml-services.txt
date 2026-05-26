@@ -1,0 +1,45 @@
+Services Overview
+ConfigService
+
+Handles app settings like configuration values and defaults.
+
+StorageService
+
+Manages saving, loading, and removing data from localStorage.
+
+MockApiService
+
+Works as a fake API for handling collections such as users, exams, and submissions.
+
+AuthService
+
+Handles login, registration, logout, current user data, and role-based redirects.
+
+ExamService
+
+Manages teacher exams, available exams, exam creation/editing, and status updates.
+
+SubmissionService
+
+Handles exam submissions, grading, scores, and student results.
+
+NotifyService
+
+Shows success and error notifications.
+
+LoggerService
+
+Handles app logging for debugging and tracking messages.
+
+RouteService
+
+Manages navigation, route matching, redirects, and protected routes.
+
+Service Relationships
+AuthService uses MockApiService and StorageService
+ExamService uses MockApiService
+SubmissionService uses both MockApiService and ExamService
+MockApiService uses StorageService
+StorageService works with ConfigService and localStorage
+NotifyService uses LoggerService
+RouteService uses AuthService
