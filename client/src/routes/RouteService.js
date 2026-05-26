@@ -37,6 +37,7 @@ class RouteService {
 
     const { route } = match
 
+    // Guest pages are hidden after login.
     if (route.access === 'guest') {
       return currentUser ? this.authService.getRedirectPath(currentUser) : null
     }
@@ -45,6 +46,7 @@ class RouteService {
       return '/login'
     }
 
+    // Keep each role inside its own page group.
     if (route.access !== currentUser.role) {
       return this.authService.getRedirectPath(currentUser)
     }
@@ -84,6 +86,7 @@ class RouteService {
 
       const currentPart = currentParts[index]
 
+      // Values like :id are saved as route params.
       if (routePart.startsWith(':')) {
         return {
           ...params,

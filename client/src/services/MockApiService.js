@@ -18,6 +18,7 @@ class MockApiService {
 
   getCollection(collectionName) {
     const initialData = this.collections[collectionName] ?? []
+    // localStorage overrides the seed data after the first change.
     return this.storageService.load(collectionName, initialData)
   }
 

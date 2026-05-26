@@ -76,6 +76,7 @@ class SubmissionService {
   }
 
   calculateScore(questions, answers) {
+    // Each correct answer adds the question points to the final score.
     return questions.reduce((total, question) => {
       const answer = answers.find(
         (currentAnswer) => currentAnswer.questionId === question.id,

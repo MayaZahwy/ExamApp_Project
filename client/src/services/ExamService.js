@@ -30,6 +30,7 @@ class ExamService {
     const exams = await this.mockApiService.getAll('exams')
     const questions = await this.mockApiService.getAll('questions')
 
+    // Students can only see published exams.
     return exams
       .filter((exam) => exam.status === 'published')
       .map((exam) => this.attachQuestions(exam, questions))
@@ -119,6 +120,7 @@ class ExamService {
   }
 
   getNextStatusOptions(status) {
+    // Exam status moves forward only.
     if (status === 'draft') {
       return [{ label: 'Publish', status: 'published' }]
     }

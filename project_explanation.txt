@@ -5,35 +5,85 @@ Teachers can create and manage exams, while students can take exams and view the
 The project uses mock data and localStorage instead of a real backend server.
 
 Main Features
-Login and registration
-Teacher and student dashboards
-Create, edit, publish, and close exams
-Take exams and view results
-Automatic grading
-Data saved in localStorage
-User Roles
+- Login and registration
+- Teacher and student dashboards
+- Create, edit, publish, and close exams
+- Take exams and view results
+- Automatic grading
+- Role-based navigation
+- Data saved in localStorage
 
 Teacher
-
-Create and manage exams
-Publish or close exams
-View exam status
+- Create and manage exams
+- Edit exam details, questions, answers, and points
+- Publish draft exams
+- Close published exams
+- View exam status
 
 Student
+- View available exams
+- Take published exams
+- Submit answers
+- See automatic results and previous grades
 
-View available exams
-Take exams
-Submit answers and see results
+Pages
+- Login page
+- Register page
+- Teacher dashboard
+- Teacher exams page
+- Create exam page
+- Edit exam page
+- Exam status page
+- Student dashboard
+- Available exams page
+- Take exam page
+- My results page
+
+Services
+- ConfigService stores app settings.
+- StorageService reads and writes localStorage.
+- MockApiService works like a small fake API.
+- AuthService handles login, register, logout, and role redirects.
+- ExamService handles exams, questions, and exam status changes.
+- SubmissionService handles submitted answers and grading.
+- NotifyService shows success and error messages.
+- LoggerService writes simple logs.
+- RouteService handles hash routes and protected pages.
+
+Mock Data Entities
+- User
+- Exam
+- Question
+- Submission
+
+Authentication
+Login checks the email and password against the users collection.
+Registration creates a new user and saves it through the mock API.
+The current logged-in user is saved in localStorage without the password.
+After login or registration, teachers go to the teacher dashboard and students go to the student dashboard.
+
 Exam Status
+Exams can be draft, published, or closed.
+New exams start as draft.
+A draft exam can be published.
+A published exam can be closed.
+Closed exams do not have another status action.
+Students only see published exams.
+Draft and closed exams are not available to students.
 
-Exams can be:
-
-Draft
-Published
-Closed
-
-Students can only access published exams.
-
-Storage
-
+localStorage
 The app stores users, exams, questions, submissions, and the current user in localStorage.
+The storage prefix is exam_app.
+
+Saved keys:
+- exam_app:currentUser
+- exam_app:users
+- exam_app:exams
+- exam_app:questions
+- exam_app:submissions
+
+Client Only Note
+This app has no backend server and no database.
+All data is stored in the browser.
+MockApiService returns promises so the code feels close to an API, but it still uses localStorage.
+Clearing browser storage removes the saved users, exams, questions, and submissions.
