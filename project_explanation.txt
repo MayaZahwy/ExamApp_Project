@@ -1,0 +1,39 @@
+Exam Management App
+
+A simple exam management app built with React and Vite.
+Teachers can create and manage exams, while students can take exams and view their results.
+The project uses mock data and localStorage instead of a real backend server.
+
+Main Features
+Login and registration
+Teacher and student dashboards
+Create, edit, publish, and close exams
+Take exams and view results
+Automatic grading
+Data saved in localStorage
+User Roles
+
+Teacher
+
+Create and manage exams
+Publish or close exams
+View exam status
+
+Student
+
+View available exams
+Take exams
+Submit answers and see results
+Exam Status
+
+Exams can be:
+
+Draft
+Published
+Closed
+
+Students can only access published exams.
+
+Storage
+
+The app stores users, exams, questions, submissions, and the current user in localStorage.
