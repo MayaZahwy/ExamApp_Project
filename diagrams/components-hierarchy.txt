@@ -1,0 +1,23 @@
+The app is built around a main App component that handles navigation, notifications, and page routing.
+
+Main Components
+Navigation menu
+Notification messages
+Auth pages: Login and Register
+Teacher pages: Dashboard, Exams, Create/Edit Exam, Exam Status
+Student pages: Dashboard, Available Exams, Take Exam, Results
+
+ExamForm is reused for both creating and editing exams.
+
+Routes
+/login → Login page
+/register → Register page
+/teacher → Teacher dashboard
+/teacher/exams → Teacher exams page
+/teacher/create-exam → Create exam page
+/teacher/edit-exam/:id → Edit exam page
+/teacher/exam-status/:id → Exam status page
+/student → Student dashboard
+/student/exams → Available exams page
+/student/take-exam/:id → Take exam page
+/student/results → Results page

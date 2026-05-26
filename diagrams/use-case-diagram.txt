@@ -1,0 +1,37 @@
+Use Cases
+Teacher
+
+A teacher can:
+
+Login or register
+View the teacher dashboard
+Create and manage exams
+Add or edit questions
+Publish or close exams
+Check exam status
+Logout
+Student
+
+A student can:
+
+Login or register
+View the student dashboard
+See available exams
+Take published exams
+Submit answers
+Get automatic grades
+View results
+Logout
+Shared Actions
+Login checks user credentials, saves the current user, and redirects based on role
+Register creates a new account and logs the user in
+Logout removes the current user and returns to the login page
+Exam Flow
+Teacher creates an exam
+Exam starts as a draft
+Teacher publishes the exam
+Students can take the exam
+Students submit answers
+The app calculates the grade automatically
+Students can view their results
+Teacher can close the exam

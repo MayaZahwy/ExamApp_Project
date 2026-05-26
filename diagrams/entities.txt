@@ -1,0 +1,53 @@
+Data Models
+User
+
+Stores account information:
+
+id
+full name
+email
+password
+role (teacher or student)
+Exam
+
+Stores exam details:
+
+title and description
+teacher ID
+duration
+question IDs
+status (draft, published, closed)
+available dates
+Question
+
+Stores exam questions:
+
+question text
+answer options
+correct answer
+points
+
+Each option includes:
+
+id
+text
+Submission
+
+Stores student exam submissions:
+
+exam ID
+student ID
+answers
+score and percentage
+submission date
+status (graded)
+
+Each answer includes:
+
+question ID
+selected option ID
+Relationships
+A teacher can create multiple exams
+An exam can contain multiple questions
+A student can have multiple submissions
+Each submission belongs to one exam and one student
