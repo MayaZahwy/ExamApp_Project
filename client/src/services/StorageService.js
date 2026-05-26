@@ -9,6 +9,7 @@ class StorageService {
   }
 
   save(key, value) {
+    // All app data is stored as JSON in the browser.
     localStorage.setItem(this.getStorageKey(key), JSON.stringify(value))
   }
 
@@ -22,6 +23,7 @@ class StorageService {
     try {
       return JSON.parse(value)
     } catch {
+      // Bad saved data should not break the app.
       return fallbackValue
     }
   }
