@@ -8,11 +8,16 @@ const { Pool } = pg;
 // Database URL configuration. Falls back to local connection if DATABASE_URL is not set.
 const connectionString = process.env.DATABASE_URL || 'postgres://postgres:postgres@localhost:5432/exam_app';
 
+const useSsl =
+  process.env.DATABASE_SSL === 'true' ||
+  connectionString.includes('supabase.com') ||
+  connectionString.includes('render.com') ||
+  process.env.NODE_ENV === 'production';
+
 const pool = new Pool({
   connectionString,
-  ssl: connectionString.includes('ssl=true') || connectionString.includes('render.com') || process.env.NODE_ENV === 'production'
-    ? { rejectUnauthorized: false }
-    : false
+  ssl: useSsl ? { rejectUnauthorized: false } : false,
+  connectionTimeoutMillis: 15000,
 });
 
 // Verify connection on pool initialization
