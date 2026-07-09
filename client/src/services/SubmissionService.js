@@ -58,6 +58,24 @@ class SubmissionService {
       )
   }
 
+  async getExamSubmissions(examId, teacherId) {
+    if (!this.useMockApi()) {
+      return this.apiService.get(`/api/exams/${examId}/submissions`)
+    }
+
+    const exam = await this.examService.getExamForTeacher(examId, teacherId)
+    if (!exam) {
+      return []
+    }
+
+    const submissions = await this.mockApiService.getAll('submissions')
+    return submissions
+      .filter((submission) => submission.examId === examId)
+      .sort((firstSubmission, secondSubmission) =>
+        secondSubmission.submittedAt.localeCompare(firstSubmission.submittedAt),
+      )
+  }
+
   async submitExam(studentId, examId, selectedAnswers) {
     const exam = await this.examService.getAvailableExamById(examId)
 
