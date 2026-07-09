@@ -45,6 +45,12 @@ function MyResultsPage({ currentUser }) {
                 <div>
                   <h2>{result.exam?.title ?? 'Unknown exam'}</h2>
                   <p>Submitted: {formatDate(result.submittedAt)}</p>
+                  <p>
+                    Feedback:{' '}
+                    {result.feedback && result.feedback.trim().length > 0
+                      ? result.feedback
+                      : 'No lecturer feedback yet.'}
+                  </p>
                 </div>
 
                 <div className="result-score">
