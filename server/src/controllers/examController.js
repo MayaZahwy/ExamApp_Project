@@ -35,3 +35,16 @@ export async function update(req, res, next) {
     next(error);
   }
 }
+
+export async function updateStatus(req, res, next) {
+  try {
+    const exam = await examService.updateExamStatus(
+      req.params.id,
+      req.user.id,
+      req.body.status,
+    );
+    res.status(200).json(exam);
+  } catch (error) {
+    next(error);
+  }
+}

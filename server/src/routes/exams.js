@@ -7,6 +7,7 @@ const teacherOnly = [authenticate, requireRole('teacher')];
 
 router.get('/mine', ...teacherOnly, examController.getMine);
 router.post('/', ...teacherOnly, examController.create);
+router.patch('/:id/status', ...teacherOnly, examController.updateStatus);
 router.get('/:id', ...teacherOnly, examController.getById);
 router.put('/:id', ...teacherOnly, examController.update);
 
