@@ -1,4 +1,5 @@
 import ConfigService from './ConfigService'
+import ApiService from './ApiService'
 import AuthService from './AuthService'
 import ExamService from './ExamService'
 import LoggerService from './LoggerService'
@@ -9,6 +10,7 @@ import StorageService from './StorageService'
 
 const configService = new ConfigService()
 const storageService = new StorageService(configService)
+const apiService = new ApiService(storageService)
 const loggerService = new LoggerService(configService)
 const notifyService = new NotifyService(loggerService)
 const mockApiService = new MockApiService(storageService)
@@ -17,6 +19,7 @@ const examService = new ExamService(mockApiService)
 const submissionService = new SubmissionService(mockApiService, examService)
 
 export {
+  ApiService,
   AuthService,
   ConfigService,
   ExamService,
@@ -25,6 +28,7 @@ export {
   NotifyService,
   SubmissionService,
   StorageService,
+  apiService,
   authService,
   configService,
   examService,
