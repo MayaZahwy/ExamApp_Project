@@ -10,6 +10,7 @@ const emptyQuestion = () => {
 
   return {
     id: '',
+    type: 'MULTIPLE_CHOICE',
     text: '',
     points: 10,
     options,
@@ -39,6 +40,34 @@ function ExamForm({ exam, isSubmitting, onCancel, onSubmit, submitLabel }) {
         index === questionIndex ? { ...question, ...updates } : question,
       ),
     }))
+  }
+
+  function normalizeQuestionType(question, type) {
+    if (type === 'OPEN_ENDED') {
+      return {
+        ...question,
+        type,
+        options: [],
+        correctOptionId: null,
+      }
+    }
+
+    const existingOptions =
+      question.options && question.options.length >= 2
+        ? question.options
+        : [emptyOption(), emptyOption()]
+    const hasCorrectOption = existingOptions.some(
+      (option) => option.id === question.correctOptionId,
+    )
+
+    return {
+      ...question,
+      type,
+      options: existingOptions,
+      correctOptionId: hasCorrectOption
+        ? question.correctOptionId
+        : existingOptions[0].id,
+    }
   }
 
   function updateOption(questionIndex, optionIndex, value) {
@@ -184,6 +213,22 @@ function ExamForm({ exam, isSubmitting, onCancel, onSubmit, submitLabel }) {
             </div>
 
             <label>
+              Question type
+              <select
+                onChange={(event) =>
+                  updateQuestion(
+                    questionIndex,
+                    normalizeQuestionType(question, event.target.value),
+                  )
+                }
+                value={question.type || 'MULTIPLE_CHOICE'}
+              >
+                <option value="MULTIPLE_CHOICE">MULTIPLE_CHOICE</option>
+                <option value="OPEN_ENDED">OPEN_ENDED</option>
+              </select>
+            </label>
+
+            <label>
               Question text
               <input
                 onChange={(event) =>
@@ -208,45 +253,49 @@ function ExamForm({ exam, isSubmitting, onCancel, onSubmit, submitLabel }) {
               />
             </label>
 
-            <div className="option-list">
-              {question.options.map((option, optionIndex) => (
-                <div className="option-row" key={option.id}>
-                  <input
-                    checked={question.correctOptionId === option.id}
-                    name={`correct-${questionIndex}`}
-                    onChange={() =>
-                      updateQuestion(questionIndex, {
-                        correctOptionId: option.id,
-                      })
-                    }
-                    type="radio"
-                  />
-                  <label>
-                    Answer {optionIndex + 1}
-                    <input
-                      onChange={(event) =>
-                        updateOption(questionIndex, optionIndex, event.target.value)
-                      }
-                      required
-                      type="text"
-                      value={option.text}
-                    />
-                  </label>
-                  {question.options.length > 2 && (
-                    <button
-                      type="button"
-                      onClick={() => removeOption(questionIndex, optionIndex)}
-                    >
-                      Remove
-                    </button>
-                  )}
+            {question.type !== 'OPEN_ENDED' && (
+              <>
+                <div className="option-list">
+                  {question.options.map((option, optionIndex) => (
+                    <div className="option-row" key={option.id}>
+                      <input
+                        checked={question.correctOptionId === option.id}
+                        name={`correct-${questionIndex}`}
+                        onChange={() =>
+                          updateQuestion(questionIndex, {
+                            correctOptionId: option.id,
+                          })
+                        }
+                        type="radio"
+                      />
+                      <label>
+                        Answer {optionIndex + 1}
+                        <input
+                          onChange={(event) =>
+                            updateOption(questionIndex, optionIndex, event.target.value)
+                          }
+                          required
+                          type="text"
+                          value={option.text}
+                        />
+                      </label>
+                      {question.options.length > 2 && (
+                        <button
+                          type="button"
+                          onClick={() => removeOption(questionIndex, optionIndex)}
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
 
-            <button type="button" onClick={() => addOption(questionIndex)}>
-              Add answer
-            </button>
+                <button type="button" onClick={() => addOption(questionIndex)}>
+                  Add answer
+                </button>
+              </>
+            )}
           </article>
         ))}
       </section>
