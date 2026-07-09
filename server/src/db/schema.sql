@@ -1,42 +1,195 @@
--- Enable UUID generation extension
+-- Enable UUID generation and password hashing extensions
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
 -- Drop tables if they exist (in reverse order of dependencies)
 DROP TABLE IF EXISTS submissions;
+DROP TABLE IF EXISTS questions;
 DROP TABLE IF EXISTS exams;
 DROP TABLE IF EXISTS users;
--- 1. Create Users Table
+
+-- 1. Users (aligned with client/src/models/User.js)
 CREATE TABLE users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  username VARCHAR(50) UNIQUE NOT NULL,
-  password VARCHAR(100) NOT NULL,
-  role VARCHAR(20) CHECK (role IN ('LECTURER', 'STUDENT')) NOT NULL,
-  name VARCHAR(100) NOT NULL,
+  full_name VARCHAR(100) NOT NULL,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password VARCHAR(255) NOT NULL,
+  role VARCHAR(20) CHECK (role IN ('teacher', 'student')) NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
--- 2. Create Exams Table (using JSONB for questions)
+
+-- 2. Exams (aligned with client/src/models/Exam.js)
 CREATE TABLE exams (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title VARCHAR(150) NOT NULL,
-  time_limit INTEGER NOT NULL, -- in minutes
+  description TEXT NOT NULL DEFAULT '',
+  teacher_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  duration_minutes INTEGER NOT NULL DEFAULT 30,
+  status VARCHAR(20) CHECK (status IN ('draft', 'published', 'closed')) NOT NULL DEFAULT 'draft',
+  available_from TIMESTAMP WITH TIME ZONE,
+  available_until TIMESTAMP WITH TIME ZONE,
   passing_grade INTEGER NOT NULL DEFAULT 60,
-  questions JSONB NOT NULL DEFAULT '[]'::jsonb,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
--- 3. Create Submissions Table (using JSONB for student responses)
+
+-- 3. Questions (aligned with client/src/models/Question.js)
+CREATE TABLE questions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  exam_id UUID REFERENCES exams(id) ON DELETE CASCADE NOT NULL,
+  type VARCHAR(20) CHECK (type IN ('MULTIPLE_CHOICE', 'OPEN_ENDED')) NOT NULL DEFAULT 'MULTIPLE_CHOICE',
+  text TEXT NOT NULL,
+  options JSONB NOT NULL DEFAULT '[]'::jsonb,
+  correct_option_id VARCHAR(50),
+  points INTEGER NOT NULL DEFAULT 10,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 4. Submissions (aligned with client/src/models/Submission.js)
 CREATE TABLE submissions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   exam_id UUID REFERENCES exams(id) ON DELETE CASCADE NOT NULL,
   student_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
-  score NUMERIC(5,2) NOT NULL,
-  answers JSONB NOT NULL DEFAULT '{}'::jsonb,
-  submitted_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+  answers JSONB NOT NULL DEFAULT '[]'::jsonb,
+  score NUMERIC(7,2) NOT NULL DEFAULT 0,
+  max_score NUMERIC(7,2) NOT NULL DEFAULT 0,
+  percentage INTEGER NOT NULL DEFAULT 0,
+  status VARCHAR(20) CHECK (status IN ('pending', 'partial', 'graded')) NOT NULL DEFAULT 'pending',
+  feedback TEXT,
+  submitted_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE (exam_id, student_id)
 );
--- Seed Initial Data
-INSERT INTO users (username, password, role, name) VALUES
-('lecturer1', 'password', 'LECTURER', 'Dr. Smith'),
-('student1', 'password', 'STUDENT', 'John Doe');
-INSERT INTO exams (title, time_limit, passing_grade, questions) VALUES
-('JavaScript Basics', 60, 60, '[
-  {"id": "q1", "type": "MULTIPLE_CHOICE", "text": "What is typeof null?", "options": ["object", "null", "undefined"], "answer": "object"},
-  {"id": "q2", "type": "OPEN_ENDED", "text": "Explain Closures in JS."}
-]'::jsonb);
+
+CREATE INDEX idx_exams_teacher_id ON exams(teacher_id);
+CREATE INDEX idx_exams_status ON exams(status);
+CREATE INDEX idx_questions_exam_id ON questions(exam_id);
+CREATE INDEX idx_submissions_exam_id ON submissions(exam_id);
+CREATE INDEX idx_submissions_student_id ON submissions(student_id);
+
+-- Seed users (passwords hashed with bcrypt via pgcrypto)
+INSERT INTO users (id, full_name, email, password, role) VALUES
+(
+  'a0000000-0000-4000-8000-000000000001',
+  'Dana Cohen',
+  'teacher@example.com',
+  crypt('teacher123', gen_salt('bf')),
+  'teacher'
+),
+(
+  'a0000000-0000-4000-8000-000000000002',
+  'Noam Levi',
+  'student@example.com',
+  crypt('student123', gen_salt('bf')),
+  'student'
+);
+
+-- Seed exams (aligned with client/src/data/mockExams.js)
+INSERT INTO exams (
+  id, title, description, teacher_id, duration_minutes, status, available_from, available_until, passing_grade
+) VALUES
+(
+  'b0000000-0000-4000-8000-000000000001',
+  'Basic Math Quiz',
+  'A short quiz covering arithmetic basics.',
+  'a0000000-0000-4000-8000-000000000001',
+  30,
+  'published',
+  '2026-05-01T08:00:00.000Z',
+  '2026-06-01T20:00:00.000Z',
+  60
+),
+(
+  'b0000000-0000-4000-8000-000000000002',
+  'Science Checkpoint',
+  'A sample exam for introductory science topics.',
+  'a0000000-0000-4000-8000-000000000001',
+  25,
+  'published',
+  '2026-05-10T08:00:00.000Z',
+  '2026-06-10T20:00:00.000Z',
+  60
+),
+(
+  'b0000000-0000-4000-8000-000000000003',
+  'English Practice',
+  'A draft exam for spelling and language practice.',
+  'a0000000-0000-4000-8000-000000000001',
+  20,
+  'draft',
+  NULL,
+  NULL,
+  60
+);
+
+-- Seed questions (aligned with client/src/data/mockQuestions.js)
+INSERT INTO questions (
+  id, exam_id, type, text, options, correct_option_id, points, sort_order
+) VALUES
+(
+  'c0000000-0000-4000-8000-000000000001',
+  'b0000000-0000-4000-8000-000000000001',
+  'MULTIPLE_CHOICE',
+  'What is 8 + 7?',
+  '[{"id":"a","text":"13"},{"id":"b","text":"15"},{"id":"c","text":"17"},{"id":"d","text":"18"}]'::jsonb,
+  'b',
+  10,
+  0
+),
+(
+  'c0000000-0000-4000-8000-000000000002',
+  'b0000000-0000-4000-8000-000000000001',
+  'MULTIPLE_CHOICE',
+  'What is 6 x 4?',
+  '[{"id":"a","text":"18"},{"id":"b","text":"20"},{"id":"c","text":"24"},{"id":"d","text":"28"}]'::jsonb,
+  'c',
+  10,
+  1
+),
+(
+  'c0000000-0000-4000-8000-000000000003',
+  'b0000000-0000-4000-8000-000000000002',
+  'MULTIPLE_CHOICE',
+  'Which planet is known as the Red Planet?',
+  '[{"id":"a","text":"Venus"},{"id":"b","text":"Mars"},{"id":"c","text":"Jupiter"},{"id":"d","text":"Saturn"}]'::jsonb,
+  'b',
+  10,
+  0
+),
+(
+  'c0000000-0000-4000-8000-000000000004',
+  'b0000000-0000-4000-8000-000000000003',
+  'MULTIPLE_CHOICE',
+  'Choose the correctly spelled word.',
+  '[{"id":"a","text":"Recieve"},{"id":"b","text":"Receive"},{"id":"c","text":"Receeve"},{"id":"d","text":"Receve"}]'::jsonb,
+  'b',
+  10,
+  0
+),
+(
+  'c0000000-0000-4000-8000-000000000005',
+  'b0000000-0000-4000-8000-000000000003',
+  'OPEN_ENDED',
+  'Write a short paragraph explaining the difference between "their" and "there".',
+  '[]'::jsonb,
+  NULL,
+  20,
+  1
+);
+
+-- Seed one submission (aligned with client/src/data/mockSubmissions.js)
+INSERT INTO submissions (
+  id, exam_id, student_id, answers, score, max_score, percentage, status, submitted_at
+) VALUES
+(
+  'd0000000-0000-4000-8000-000000000001',
+  'b0000000-0000-4000-8000-000000000001',
+  'a0000000-0000-4000-8000-000000000002',
+  '[
+    {"questionId":"c0000000-0000-4000-8000-000000000001","selectedOptionId":"b"},
+    {"questionId":"c0000000-0000-4000-8000-000000000002","selectedOptionId":"c"}
+  ]'::jsonb,
+  20,
+  20,
+  100,
+  'graded',
+  '2026-05-15T13:30:00.000Z'
+);
