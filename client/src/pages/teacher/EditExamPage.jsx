@@ -6,11 +6,18 @@ function EditExamPage({ currentUser, onNavigate, params }) {
   const [exam, setExam] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
 
   useEffect(() => {
     examService
       .getExamForTeacher(params.id, currentUser.id)
-      .then(setExam)
+      .then((nextExam) => {
+        setExam(nextExam)
+        setErrorMessage('')
+      })
+      .catch((error) => {
+        setErrorMessage(error.message || 'Failed to load exam.')
+      })
       .finally(() => setIsLoading(false))
   }, [currentUser.id, params.id])
 
@@ -40,7 +47,8 @@ function EditExamPage({ currentUser, onNavigate, params }) {
     return (
       <main className="page-shell">
         <section className="content-panel">
-          <h1>Exam not found</h1>
+          <h1>{errorMessage ? 'Failed to load exam' : 'Exam not found'}</h1>
+          {errorMessage && <p>{errorMessage}</p>}
           <button type="button" onClick={() => onNavigate('/teacher/exams')}>
             Back to exams
           </button>

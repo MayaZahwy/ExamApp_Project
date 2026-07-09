@@ -3,9 +3,20 @@ import { examService, notifyService } from '../../services'
 
 function TeacherExamsPage({ currentUser, onNavigate }) {
   const [exams, setExams] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [errorMessage, setErrorMessage] = useState('')
 
   useEffect(() => {
-    examService.getTeacherExams(currentUser.id).then(setExams)
+    examService
+      .getTeacherExams(currentUser.id)
+      .then((nextExams) => {
+        setExams(nextExams)
+        setErrorMessage('')
+      })
+      .catch((error) => {
+        setErrorMessage(error.message || 'Failed to load exams.')
+      })
+      .finally(() => setIsLoading(false))
   }, [currentUser.id])
 
   async function handleStatusChange(examId, nextStatus) {
@@ -41,7 +52,11 @@ function TeacherExamsPage({ currentUser, onNavigate }) {
       </section>
 
       <section className="content-panel">
-        {exams.length === 0 ? (
+        {isLoading ? (
+          <p>Loading exams...</p>
+        ) : errorMessage ? (
+          <p>{errorMessage}</p>
+        ) : exams.length === 0 ? (
           <p>No exams yet.</p>
         ) : (
           <div className="exam-list">

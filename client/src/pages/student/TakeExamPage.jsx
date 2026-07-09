@@ -7,13 +7,20 @@ function TakeExamPage({ currentUser, onNavigate, params }) {
   const [result, setResult] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
   const [timeLeftSeconds, setTimeLeftSeconds] = useState(null)
   const hasAutoSubmittedRef = useRef(false)
 
   useEffect(() => {
     examService
       .getAvailableExamById(params.id)
-      .then(setExam)
+      .then((nextExam) => {
+        setExam(nextExam)
+        setErrorMessage('')
+      })
+      .catch((error) => {
+        setErrorMessage(error.message || 'Failed to load exam.')
+      })
       .finally(() => setIsLoading(false))
   }, [params.id])
 
@@ -122,8 +129,11 @@ function TakeExamPage({ currentUser, onNavigate, params }) {
     return (
       <main className="page-shell">
         <section className="content-panel">
-          <h1>Exam not available</h1>
-          <p>This exam may be draft, closed, or unavailable.</p>
+          <h1>{errorMessage ? 'Failed to load exam' : 'Exam not available'}</h1>
+          <p>
+            {errorMessage ||
+              'This exam may be draft, closed, or unavailable.'}
+          </p>
           <button type="button" onClick={() => onNavigate('/student/exams')}>
             Back to available exams
           </button>

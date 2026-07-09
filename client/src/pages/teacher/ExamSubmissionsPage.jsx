@@ -5,6 +5,7 @@ function ExamSubmissionsPage({ currentUser, onNavigate, params }) {
   const [exam, setExam] = useState(null)
   const [submissions, setSubmissions] = useState([])
   const [isLoading, setIsLoading] = useState(true)
+  const [errorMessage, setErrorMessage] = useState('')
   const [selectedSubmissionId, setSelectedSubmissionId] = useState(null)
   const [selectedSubmission, setSelectedSubmission] = useState(null)
   const [isReviewLoading, setIsReviewLoading] = useState(false)
@@ -21,6 +22,9 @@ function ExamSubmissionsPage({ currentUser, onNavigate, params }) {
         ])
         setExam(nextExam)
         setSubmissions(nextSubmissions)
+        setErrorMessage('')
+      } catch (error) {
+        setErrorMessage(error.message || 'Failed to load submissions.')
       } finally {
         setIsLoading(false)
       }
@@ -113,7 +117,8 @@ function ExamSubmissionsPage({ currentUser, onNavigate, params }) {
     return (
       <main className="page-shell">
         <section className="content-panel">
-          <h1>Exam not found</h1>
+          <h1>{errorMessage ? 'Failed to load submissions' : 'Exam not found'}</h1>
+          {errorMessage && <p>{errorMessage}</p>}
           <button type="button" onClick={() => onNavigate('/teacher/exams')}>
             Back to exams
           </button>
