@@ -14,7 +14,12 @@ const apiService = new ApiService(storageService)
 const loggerService = new LoggerService(configService)
 const notifyService = new NotifyService(loggerService)
 const mockApiService = new MockApiService(storageService)
-const authService = new AuthService(mockApiService, storageService)
+const authService = new AuthService({
+  apiService,
+  mockApiService,
+  storageService,
+  configService,
+})
 const examService = new ExamService(mockApiService)
 const submissionService = new SubmissionService(mockApiService, examService)
 

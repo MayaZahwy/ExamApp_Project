@@ -5,6 +5,7 @@ class ConfigService {
       storagePrefix: 'exam_app',
       logLevel: 'debug',
       notifyTimeoutMs: 3000,
+      useMockApi: (import.meta.env.VITE_USE_MOCK_API ?? 'true') === 'true',
     }
   }
 
