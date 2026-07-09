@@ -4,6 +4,7 @@ import { config } from './config/index.js';
 import healthRouter from './routes/health.js';
 import authRouter from './routes/auth.js';
 import examsRouter from './routes/exams.js';
+import submissionsRouter from './routes/submissions.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -14,6 +15,7 @@ app.use(express.json());
 app.use('/api', healthRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/exams', examsRouter);
+app.use('/api/submissions', submissionsRouter);
 
 app.use((req, res) => {
   res.status(404).json({ error: 'Not found' });
