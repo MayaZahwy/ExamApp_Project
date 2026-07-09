@@ -109,3 +109,18 @@ export async function login(input) {
   const user = toSafeUser(row);
   return { token: signToken(user), user };
 }
+
+export async function getMe(userId) {
+  const result = await pool.query(
+    `SELECT id, full_name, email, role
+     FROM users
+     WHERE id = $1`,
+    [userId],
+  );
+
+  if (!result.rows[0]) {
+    throw createError(401, 'User not found.');
+  }
+
+  return toSafeUser(result.rows[0]);
+}
