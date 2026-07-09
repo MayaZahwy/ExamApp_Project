@@ -2,11 +2,21 @@ import Exam from '../models/Exam'
 import Question from '../models/Question'
 
 class ExamService {
-  constructor(mockApiService) {
+  constructor({ apiService, mockApiService, configService }) {
+    this.apiService = apiService
     this.mockApiService = mockApiService
+    this.configService = configService
+  }
+
+  useMockApi() {
+    return this.configService.get('useMockApi')
   }
 
   async getTeacherExams(teacherId) {
+    if (!this.useMockApi()) {
+      return this.apiService.get('/api/exams/mine')
+    }
+
     const exams = await this.mockApiService.getAll('exams')
     const questions = await this.mockApiService.getAll('questions')
 
@@ -16,6 +26,17 @@ class ExamService {
   }
 
   async getExamForTeacher(examId, teacherId) {
+    if (!this.useMockApi()) {
+      try {
+        return await this.apiService.get(`/api/exams/${examId}`)
+      } catch (error) {
+        if (error.status === 404) {
+          return null
+        }
+        throw error
+      }
+    }
+
     const exam = await this.mockApiService.getById('exams', examId)
 
     if (!exam || exam.teacherId !== teacherId) {
@@ -27,6 +48,10 @@ class ExamService {
   }
 
   async getAvailableExams() {
+    if (!this.useMockApi()) {
+      return this.apiService.get('/api/exams/available')
+    }
+
     const exams = await this.mockApiService.getAll('exams')
     const questions = await this.mockApiService.getAll('questions')
 
@@ -37,6 +62,17 @@ class ExamService {
   }
 
   async getAvailableExamById(examId) {
+    if (!this.useMockApi()) {
+      try {
+        return await this.apiService.get(`/api/exams/available/${examId}`)
+      } catch (error) {
+        if (error.status === 404) {
+          return null
+        }
+        throw error
+      }
+    }
+
     const exam = await this.mockApiService.getById('exams', examId)
 
     if (!exam || exam.status !== 'published') {
@@ -48,6 +84,15 @@ class ExamService {
   }
 
   async createExam(teacherId, examData) {
+    if (!this.useMockApi()) {
+      return this.apiService.post('/api/exams', {
+        title: examData.title.trim(),
+        description: examData.description.trim(),
+        durationMinutes: Number(examData.durationMinutes) || 30,
+        questions: this.toApiQuestions(examData.questions),
+      })
+    }
+
     const examId = crypto.randomUUID()
     const questions = this.buildQuestions(examId, examData.questions)
     const exam = new Exam({
@@ -72,6 +117,15 @@ class ExamService {
   }
 
   async updateExam(examId, teacherId, examData) {
+    if (!this.useMockApi()) {
+      return this.apiService.put(`/api/exams/${examId}`, {
+        title: examData.title.trim(),
+        description: examData.description.trim(),
+        durationMinutes: Number(examData.durationMinutes) || 30,
+        questions: this.toApiQuestions(examData.questions),
+      })
+    }
+
     const existingExam = await this.getExamForTeacher(examId, teacherId)
 
     if (!existingExam) {
@@ -101,6 +155,12 @@ class ExamService {
   }
 
   async updateStatus(examId, teacherId, nextStatus) {
+    if (!this.useMockApi()) {
+      return this.apiService.patch(`/api/exams/${examId}/status`, {
+        status: nextStatus,
+      })
+    }
+
     const exam = await this.getExamForTeacher(examId, teacherId)
 
     if (!exam) {
@@ -162,6 +222,23 @@ class ExamService {
         correctOptionId: question.correctOptionId || options[0]?.id,
         points: Number(question.points) || 10,
       })
+    })
+  }
+
+  toApiQuestions(questions) {
+    return questions.map((question, questionIndex) => {
+      const options = question.options.map((option, optionIndex) => ({
+        id: option.id || `${questionIndex}-${optionIndex}`,
+        text: option.text.trim(),
+      }))
+
+      return {
+        type: question.type || 'MULTIPLE_CHOICE',
+        text: question.text.trim(),
+        options,
+        correctOptionId: question.correctOptionId || options[0]?.id || null,
+        points: Number(question.points) || 10,
+      }
     })
   }
 }

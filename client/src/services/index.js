@@ -20,7 +20,11 @@ const authService = new AuthService({
   storageService,
   configService,
 })
-const examService = new ExamService(mockApiService)
+const examService = new ExamService({
+  apiService,
+  mockApiService,
+  configService,
+})
 const submissionService = new SubmissionService(mockApiService, examService)
 
 export {
