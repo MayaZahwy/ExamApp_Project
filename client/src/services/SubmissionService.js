@@ -1,18 +1,35 @@
 import Submission from '../models/Submission'
 
 class SubmissionService {
-  constructor(mockApiService, examService) {
+  constructor({ apiService, mockApiService, examService, configService }) {
+    this.apiService = apiService
     this.mockApiService = mockApiService
     this.examService = examService
+    this.configService = configService
+  }
+
+  useMockApi() {
+    return this.configService.get('useMockApi')
   }
 
   async getStudentSubmissions(studentId) {
+    if (!this.useMockApi()) {
+      return this.apiService.get('/api/submissions/mine')
+    }
+
     const submissions = await this.mockApiService.getAll('submissions')
 
     return submissions.filter((submission) => submission.studentId === studentId)
   }
 
   async getStudentResults(studentId) {
+    if (!this.useMockApi()) {
+      const submissions = await this.apiService.get('/api/submissions/mine')
+      return submissions.sort((firstSubmission, secondSubmission) =>
+        secondSubmission.submittedAt.localeCompare(firstSubmission.submittedAt),
+      )
+    }
+
     const submissions = await this.getStudentSubmissions(studentId)
     const exams = await this.mockApiService.getAll('exams')
     const questions = await this.mockApiService.getAll('questions')
@@ -48,10 +65,28 @@ class SubmissionService {
       throw new Error('This exam is not available.')
     }
 
-    const answers = exam.questions.map((question) => ({
-      questionId: question.id,
-      selectedOptionId: selectedAnswers[question.id] ?? null,
-    }))
+    const answers = exam.questions.map((question) => {
+      const selectedValue = selectedAnswers[question.id]
+      if (question.type === 'OPEN_ENDED') {
+        return {
+          questionId: question.id,
+          text: typeof selectedValue === 'string' ? selectedValue : '',
+        }
+      }
+
+      return {
+        questionId: question.id,
+        selectedOptionId: selectedValue ?? null,
+      }
+    })
+
+    if (!this.useMockApi()) {
+      return this.apiService.post('/api/submissions', {
+        examId,
+        answers,
+      })
+    }
+
     const score = this.calculateScore(exam.questions, answers)
     const maxScore = this.calculateMaxScore(exam.questions)
     const percentage = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0

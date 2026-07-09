@@ -25,7 +25,15 @@ function TakeExamPage({ currentUser, onNavigate, params }) {
   async function handleSubmit(event) {
     event.preventDefault()
 
-    if (Object.keys(answers).length !== exam.questions.length) {
+    const hasAnsweredAllQuestions = exam.questions.every((question) => {
+      const value = answers[question.id]
+      if (typeof value === 'string') {
+        return value.trim().length > 0
+      }
+      return value !== undefined && value !== null
+    })
+
+    if (!hasAnsweredAllQuestions) {
       notifyService.error('Please answer every question before submitting.')
       return
     }
