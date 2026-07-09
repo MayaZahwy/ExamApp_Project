@@ -1,0 +1,49 @@
+flowchart LR
+    UserTeacher[Teacher User] --> Frontend[React Frontend]
+    UserStudent[Student User] --> Frontend
+
+    subgraph FrontendLayer[Frontend Layer]
+        App[App + Routes]
+        Pages[Pages]
+        Form[ExamForm]
+        App --> Pages
+        Pages --> Form
+    end
+
+    subgraph ServiceLayer[Service Layer]
+        AuthService[AuthService]
+        ExamService[ExamService]
+        SubmissionService[SubmissionService]
+        ApiService[ApiService]
+        MockApiService[MockApiService]
+        StorageService[StorageService]
+        ConfigService[ConfigService]
+        NotifyService[NotifyService]
+        LoggerService[LoggerService]
+    end
+
+    Frontend --> AuthService
+    Frontend --> ExamService
+    Frontend --> SubmissionService
+    Frontend --> NotifyService
+
+    AuthService --> ApiService
+    AuthService --> MockApiService
+    AuthService --> StorageService
+    AuthService --> ConfigService
+
+    ExamService --> ApiService
+    ExamService --> MockApiService
+    ExamService --> ConfigService
+
+    SubmissionService --> ApiService
+    SubmissionService --> MockApiService
+    SubmissionService --> ExamService
+    SubmissionService --> ConfigService
+
+    MockApiService --> StorageService
+    StorageService --> LocalStorage[(localStorage)]
+    NotifyService --> LoggerService
+
+    ApiService --> BackendAPI[(Backend API)]
+    BackendAPI --> Database[(Database)]
