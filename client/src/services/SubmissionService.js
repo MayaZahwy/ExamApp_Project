@@ -76,6 +76,78 @@ class SubmissionService {
       )
   }
 
+  async getSubmissionById(submissionId) {
+    if (!this.useMockApi()) {
+      return this.apiService.get(`/api/submissions/${submissionId}`)
+    }
+
+    const submission = await this.mockApiService.getById('submissions', submissionId)
+    if (!submission) {
+      return null
+    }
+
+    const exam = await this.mockApiService.getById('exams', submission.examId)
+    const questions = await this.mockApiService.getAll('questions')
+    const examQuestions = questions.filter(
+      (question) => question.examId === submission.examId,
+    )
+
+    return {
+      ...submission,
+      exam: exam
+        ? {
+            ...exam,
+            questions: examQuestions,
+          }
+        : null,
+    }
+  }
+
+  async gradeSubmission(submissionId, questionGrades, feedback) {
+    if (!this.useMockApi()) {
+      return this.apiService.patch(`/api/submissions/${submissionId}/grade`, {
+        questionGrades,
+        feedback,
+      })
+    }
+
+    const submission = await this.getSubmissionById(submissionId)
+    if (!submission) {
+      throw new Error('Submission was not found.')
+    }
+
+    const examQuestions = submission.exam?.questions ?? []
+    const autoScore = this.calculateScore(examQuestions, submission.answers ?? [])
+    const openEndedAwardedScore = (questionGrades || []).reduce((total, grade) => {
+      const question = examQuestions.find(
+        (currentQuestion) => currentQuestion.id === grade.questionId,
+      )
+      if (!question || question.type !== 'OPEN_ENDED') {
+        return total
+      }
+
+      const points = Number(grade.pointsAwarded) || 0
+      const boundedPoints = Math.max(0, Math.min(points, Number(question.points) || 0))
+      return total + boundedPoints
+    }, 0)
+    const score = autoScore + openEndedAwardedScore
+    const maxScore = this.calculateMaxScore(examQuestions)
+    const percentage = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0
+
+    const updatedSubmission = await this.mockApiService.update('submissions', submissionId, {
+      score,
+      maxScore,
+      percentage,
+      status: 'graded',
+      feedback: feedback ?? '',
+    })
+
+    return {
+      ...updatedSubmission,
+      exam: submission.exam,
+    }
+  }
+
   async submitExam(studentId, examId, selectedAnswers) {
     const exam = await this.examService.getAvailableExamById(examId)
 

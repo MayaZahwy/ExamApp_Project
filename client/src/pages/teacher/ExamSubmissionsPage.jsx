@@ -1,10 +1,16 @@
 import { useEffect, useState } from 'react'
-import { examService, submissionService } from '../../services'
+import { examService, notifyService, submissionService } from '../../services'
 
 function ExamSubmissionsPage({ currentUser, onNavigate, params }) {
   const [exam, setExam] = useState(null)
   const [submissions, setSubmissions] = useState([])
   const [isLoading, setIsLoading] = useState(true)
+  const [selectedSubmissionId, setSelectedSubmissionId] = useState(null)
+  const [selectedSubmission, setSelectedSubmission] = useState(null)
+  const [isReviewLoading, setIsReviewLoading] = useState(false)
+  const [isSavingGrade, setIsSavingGrade] = useState(false)
+  const [questionGrades, setQuestionGrades] = useState({})
+  const [feedback, setFeedback] = useState('')
 
   useEffect(() => {
     async function loadData() {
@@ -22,6 +28,67 @@ function ExamSubmissionsPage({ currentUser, onNavigate, params }) {
 
     loadData()
   }, [currentUser.id, params.id])
+
+  async function refreshSubmissions() {
+    const nextSubmissions = await submissionService.getExamSubmissions(
+      params.id,
+      currentUser.id,
+    )
+    setSubmissions(nextSubmissions)
+  }
+
+  async function handleReview(submissionId) {
+    setSelectedSubmissionId(submissionId)
+    setIsReviewLoading(true)
+
+    try {
+      const submission = await submissionService.getSubmissionById(submissionId)
+      setSelectedSubmission(submission)
+
+      const openEndedQuestions =
+        submission?.exam?.questions?.filter(
+          (question) => question.type === 'OPEN_ENDED',
+        ) ?? []
+      const initialGrades = {}
+      openEndedQuestions.forEach((question) => {
+        initialGrades[question.id] = 0
+      })
+
+      setQuestionGrades(initialGrades)
+      setFeedback(submission?.feedback ?? '')
+    } catch (error) {
+      notifyService.error(error.message)
+    } finally {
+      setIsReviewLoading(false)
+    }
+  }
+
+  async function handleGradeSubmission(event) {
+    event.preventDefault()
+    if (!selectedSubmission) {
+      return
+    }
+
+    const gradesPayload = Object.entries(questionGrades).map(([questionId, pointsAwarded]) => ({
+      questionId,
+      pointsAwarded: Number(pointsAwarded) || 0,
+    }))
+
+    setIsSavingGrade(true)
+    try {
+      await submissionService.gradeSubmission(
+        selectedSubmission.id,
+        gradesPayload,
+        feedback,
+      )
+      await refreshSubmissions()
+      notifyService.success('Submission graded successfully.')
+    } catch (error) {
+      notifyService.error(error.message)
+    } finally {
+      setIsSavingGrade(false)
+    }
+  }
 
   function formatDate(dateValue) {
     if (!dateValue) {
@@ -55,6 +122,11 @@ function ExamSubmissionsPage({ currentUser, onNavigate, params }) {
     )
   }
 
+  const openEndedQuestions =
+    selectedSubmission?.exam?.questions?.filter(
+      (question) => question.type === 'OPEN_ENDED',
+    ) ?? []
+
   return (
     <main className="page-shell">
       <section className="page-header">
@@ -87,12 +159,78 @@ function ExamSubmissionsPage({ currentUser, onNavigate, params }) {
                   <span>
                     {submission.score ?? 0} / {submission.maxScore ?? 0}
                   </span>
+                  <button
+                    type="button"
+                    onClick={() => handleReview(submission.id)}
+                  >
+                    Review
+                  </button>
                 </div>
               </article>
             ))}
           </div>
         )}
       </section>
+
+      {selectedSubmissionId && (
+        <section className="content-panel">
+          {isReviewLoading ? (
+            <p>Loading submission details...</p>
+          ) : !selectedSubmission ? (
+            <p>Submission not found.</p>
+          ) : openEndedQuestions.length === 0 ? (
+            <p>This submission has no open-ended answers to grade.</p>
+          ) : (
+            <form onSubmit={handleGradeSubmission}>
+              <h2>Manual grading</h2>
+              {openEndedQuestions.map((question, index) => {
+                const answer = selectedSubmission.answers?.find(
+                  (currentAnswer) => currentAnswer.questionId === question.id,
+                )
+
+                return (
+                  <article className="take-question" key={question.id}>
+                    <h3>
+                      {index + 1}. {question.text}
+                    </h3>
+                    <p>{answer?.text || 'No answer provided.'}</p>
+                    <label>
+                      Points awarded (max {question.points})
+                      <input
+                        max={question.points}
+                        min="0"
+                        onChange={(event) =>
+                          setQuestionGrades((currentGrades) => ({
+                            ...currentGrades,
+                            [question.id]: event.target.value,
+                          }))
+                        }
+                        type="number"
+                        value={questionGrades[question.id] ?? 0}
+                      />
+                    </label>
+                  </article>
+                )
+              })}
+
+              <label>
+                Feedback
+                <textarea
+                  onChange={(event) => setFeedback(event.target.value)}
+                  rows="4"
+                  value={feedback}
+                />
+              </label>
+
+              <div className="form-actions">
+                <button disabled={isSavingGrade} type="submit">
+                  {isSavingGrade ? 'Saving...' : 'Save grade'}
+                </button>
+              </div>
+            </form>
+          )}
+        </section>
+      )}
     </main>
   )
 }
