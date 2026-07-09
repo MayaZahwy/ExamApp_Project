@@ -6,6 +6,7 @@ import StudentDashboard from '../pages/student/StudentDashboard'
 import TakeExamPage from '../pages/student/TakeExamPage'
 import CreateExamPage from '../pages/teacher/CreateExamPage'
 import EditExamPage from '../pages/teacher/EditExamPage'
+import ExamSubmissionsPage from '../pages/teacher/ExamSubmissionsPage'
 import ExamStatusPage from '../pages/teacher/ExamStatusPage'
 import TeacherDashboard from '../pages/teacher/TeacherDashboard'
 import TeacherExamsPage from '../pages/teacher/TeacherExamsPage'
@@ -40,6 +41,11 @@ export const routeDefinitions = [
     path: '/teacher/edit-exam/:id',
     access: 'teacher',
     Component: EditExamPage,
+  },
+  {
+    path: '/teacher/exam-submissions/:id',
+    access: 'teacher',
+    Component: ExamSubmissionsPage,
   },
   {
     path: '/teacher/exam-status/:id',

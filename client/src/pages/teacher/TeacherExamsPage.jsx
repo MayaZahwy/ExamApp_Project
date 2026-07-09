@@ -67,6 +67,12 @@ function TeacherExamsPage({ currentUser, onNavigate }) {
                   ))}
                   <button
                     type="button"
+                    onClick={() => onNavigate(`/teacher/exam-submissions/${exam.id}`)}
+                  >
+                    Submissions
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => onNavigate(`/teacher/exam-status/${exam.id}`)}
                   >
                     Status
