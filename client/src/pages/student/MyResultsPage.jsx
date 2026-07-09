@@ -4,11 +4,18 @@ import { submissionService } from '../../services'
 function MyResultsPage({ currentUser }) {
   const [results, setResults] = useState([])
   const [isLoading, setIsLoading] = useState(true)
+  const [errorMessage, setErrorMessage] = useState('')
 
   useEffect(() => {
     submissionService
       .getStudentResults(currentUser.id)
-      .then(setResults)
+      .then((nextResults) => {
+        setResults(nextResults)
+        setErrorMessage('')
+      })
+      .catch((error) => {
+        setErrorMessage(error.message || 'Failed to load results.')
+      })
       .finally(() => setIsLoading(false))
   }, [currentUser.id])
 
@@ -36,6 +43,8 @@ function MyResultsPage({ currentUser }) {
       <section className="content-panel">
         {isLoading ? (
           <p>Loading results...</p>
+        ) : errorMessage ? (
+          <p>{errorMessage}</p>
         ) : results.length === 0 ? (
           <p>No submitted exams yet.</p>
         ) : (

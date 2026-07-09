@@ -3,9 +3,20 @@ import { examService } from '../../services'
 
 function AvailableExamsPage({ onNavigate }) {
   const [exams, setExams] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [errorMessage, setErrorMessage] = useState('')
 
   useEffect(() => {
-    examService.getAvailableExams().then(setExams)
+    examService
+      .getAvailableExams()
+      .then((nextExams) => {
+        setExams(nextExams)
+        setErrorMessage('')
+      })
+      .catch((error) => {
+        setErrorMessage(error.message || 'Failed to load available exams.')
+      })
+      .finally(() => setIsLoading(false))
   }, [])
 
   return (
@@ -19,7 +30,11 @@ function AvailableExamsPage({ onNavigate }) {
       </section>
 
       <section className="content-panel">
-        {exams.length === 0 ? (
+        {isLoading ? (
+          <p>Loading available exams...</p>
+        ) : errorMessage ? (
+          <p>{errorMessage}</p>
+        ) : exams.length === 0 ? (
           <p>No available exams.</p>
         ) : (
           <div className="exam-list">
