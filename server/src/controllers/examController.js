@@ -48,3 +48,21 @@ export async function updateStatus(req, res, next) {
     next(error);
   }
 }
+
+export async function getAvailable(req, res, next) {
+  try {
+    const exams = await examService.getAvailableExams();
+    res.status(200).json(exams);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getAvailableById(req, res, next) {
+  try {
+    const exam = await examService.getAvailableExamById(req.params.id);
+    res.status(200).json(exam);
+  } catch (error) {
+    next(error);
+  }
+}

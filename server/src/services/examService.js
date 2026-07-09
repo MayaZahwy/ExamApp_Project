@@ -13,6 +13,17 @@ function mapQuestionRow(row) {
   };
 }
 
+function mapQuestionRowForStudent(row) {
+  return {
+    id: row.id,
+    examId: row.exam_id,
+    type: row.type,
+    text: row.text,
+    options: row.options,
+    points: row.points,
+  };
+}
+
 function mapExamRow(row, questions) {
   return {
     id: row.id,
@@ -298,4 +309,41 @@ export async function updateExamStatus(examId, teacherId, nextStatus) {
 
   const questionsByExamId = await fetchQuestionsForExams([examId]);
   return mapExamRow(result.rows[0], questionsByExamId.get(examId) || []);
+}
+
+export async function getAvailableExams() {
+  const examsResult = await pool.query(
+    `SELECT *
+     FROM exams
+     WHERE status = 'published'
+     ORDER BY created_at DESC`,
+  );
+
+  const examIds = examsResult.rows.map((row) => row.id);
+  const questionsByExamId = await fetchQuestionsForExams(examIds);
+
+  return examsResult.rows.map((row) => {
+    const questions = (questionsByExamId.get(row.id) || []).map(mapQuestionRowForStudent);
+    return mapExamRow(row, questions);
+  });
+}
+
+export async function getAvailableExamById(examId) {
+  const examResult = await pool.query(
+    `SELECT *
+     FROM exams
+     WHERE id = $1 AND status = 'published'`,
+    [examId],
+  );
+
+  const examRow = examResult.rows[0];
+
+  if (!examRow) {
+    throw createError(404, 'Exam was not found.');
+  }
+
+  const questionsByExamId = await fetchQuestionsForExams([examId]);
+  const questions = (questionsByExamId.get(examId) || []).map(mapQuestionRowForStudent);
+
+  return mapExamRow(examRow, questions);
 }
