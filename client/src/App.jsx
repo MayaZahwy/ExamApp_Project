@@ -12,6 +12,18 @@ function App() {
   const [notification, setNotification] = useState(null)
 
   useEffect(() => {
+    async function bootstrapAuth() {
+      const user = await authService.restoreSession()
+
+      if (user) {
+        setCurrentUser(user)
+      }
+    }
+
+    bootstrapAuth()
+  }, [])
+
+  useEffect(() => {
     function handleHashChange() {
       setRoute(routeService.getRouteFromHash())
     }

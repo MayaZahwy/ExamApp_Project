@@ -114,7 +114,7 @@ class ApiService {
 
   createHttpError(response, payload) {
     const errorMessage =
-      (payload && typeof payload === 'object' && payload.message) ||
+      (payload && typeof payload === 'object' && (payload.error || payload.message)) ||
       `Request failed with status ${response.status}`
     const error = new Error(errorMessage)
 

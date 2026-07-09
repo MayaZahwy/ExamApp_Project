@@ -1,13 +1,86 @@
 import User from '../models/User'
 
 class AuthService {
-  constructor(mockApiService, storageService) {
+  constructor({ apiService, mockApiService, storageService, configService }) {
+    this.apiService = apiService
     this.mockApiService = mockApiService
     this.storageService = storageService
+    this.configService = configService
     this.currentUserKey = 'currentUser'
+    this.authTokenKey = 'authToken'
+  }
+
+  useMockApi() {
+    return this.configService.get('useMockApi')
   }
 
   async login({ email, password }) {
+    if (this.useMockApi()) {
+      return this.loginWithMock({ email, password })
+    }
+
+    const response = await this.apiService.post('/api/auth/login', {
+      email: this.normalizeEmail(email),
+      password,
+    })
+
+    return this.setAuthSession(response.token, response.user)
+  }
+
+  async register({ fullName, email, password, role = 'student' }) {
+    if (this.useMockApi()) {
+      return this.registerWithMock({ fullName, email, password, role })
+    }
+
+    const response = await this.apiService.post('/api/auth/register', {
+      fullName: fullName.trim(),
+      email: this.normalizeEmail(email),
+      password,
+      role,
+    })
+
+    return this.setAuthSession(response.token, response.user)
+  }
+
+  async restoreSession() {
+    if (this.useMockApi()) {
+      return this.getCurrentUser()
+    }
+
+    const token = this.storageService.load(this.authTokenKey, null)
+
+    if (!token) {
+      return null
+    }
+
+    try {
+      const user = await this.apiService.get('/api/auth/me')
+      const safeUser = this.toSafeUser(user)
+      this.setCurrentUser(safeUser)
+      return safeUser
+    } catch {
+      this.clearAuthSession()
+      return null
+    }
+  }
+
+  logout() {
+    this.clearAuthSession()
+  }
+
+  getCurrentUser() {
+    return this.storageService.load(this.currentUserKey, null)
+  }
+
+  setCurrentUser(user) {
+    this.storageService.save(this.currentUserKey, user)
+  }
+
+  getRedirectPath(user) {
+    return user?.role === 'teacher' ? '/teacher' : '/student'
+  }
+
+  async loginWithMock({ email, password }) {
     const users = await this.mockApiService.getAll('users')
     const normalizedEmail = this.normalizeEmail(email)
 
@@ -26,7 +99,7 @@ class AuthService {
     return safeUser
   }
 
-  async register({ fullName, email, password, role = 'student' }) {
+  async registerWithMock({ fullName, email, password, role = 'student' }) {
     const users = await this.mockApiService.getAll('users')
     const normalizedEmail = this.normalizeEmail(email)
     const existingUser = users.find(
@@ -52,20 +125,16 @@ class AuthService {
     return safeUser
   }
 
-  logout() {
+  setAuthSession(token, user) {
+    this.storageService.save(this.authTokenKey, token)
+    const safeUser = this.toSafeUser(user)
+    this.setCurrentUser(safeUser)
+    return safeUser
+  }
+
+  clearAuthSession() {
     this.storageService.remove(this.currentUserKey)
-  }
-
-  getCurrentUser() {
-    return this.storageService.load(this.currentUserKey, null)
-  }
-
-  setCurrentUser(user) {
-    this.storageService.save(this.currentUserKey, user)
-  }
-
-  getRedirectPath(user) {
-    return user?.role === 'teacher' ? '/teacher' : '/student'
+    this.storageService.remove(this.authTokenKey)
   }
 
   normalizeEmail(email) {
