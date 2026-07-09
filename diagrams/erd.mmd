@@ -1,0 +1,51 @@
+erDiagram
+    USERS {
+        uuid id PK
+        string full_name
+        string email
+        string password
+        string role
+        timestamp created_at
+    }
+
+    EXAMS {
+        uuid id PK
+        string title
+        string description
+        uuid teacher_id FK
+        int duration_minutes
+        string status
+        timestamp available_from
+        timestamp available_until
+        int passing_grade
+        timestamp created_at
+    }
+
+    QUESTIONS {
+        uuid id PK
+        uuid exam_id FK
+        string type
+        string text
+        jsonb options
+        string correct_option_id
+        int points
+        int sort_order
+    }
+
+    SUBMISSIONS {
+        uuid id PK
+        uuid exam_id FK
+        uuid student_id FK
+        jsonb answers
+        int score
+        int max_score
+        int percentage
+        string status
+        text feedback
+        timestamp submitted_at
+    }
+
+    USERS ||--o{ EXAMS : creates
+    EXAMS ||--o{ QUESTIONS : contains
+    USERS ||--o{ SUBMISSIONS : submits
+    EXAMS ||--o{ SUBMISSIONS : receives
