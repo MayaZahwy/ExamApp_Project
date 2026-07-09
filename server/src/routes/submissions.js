@@ -4,6 +4,14 @@ import { authenticate, requireRole } from '../middleware/auth.js';
 
 const router = Router();
 
+router.get('/mine', authenticate, requireRole('student'), submissionController.getMine);
 router.post('/', authenticate, requireRole('student'), submissionController.submit);
+router.patch(
+  '/:id/grade',
+  authenticate,
+  requireRole('teacher'),
+  submissionController.grade,
+);
+router.get('/:id', authenticate, submissionController.getById);
 
 export default router;
