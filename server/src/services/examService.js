@@ -157,6 +157,16 @@ async function getOwnedExamRow(examId, teacherId, client = pool) {
   return result.rows[0] || null;
 }
 
+const ALLOWED_STATUS_TRANSITIONS = {
+  draft: ['published'],
+  published: ['closed'],
+  closed: [],
+};
+
+function canChangeStatus(currentStatus, nextStatus) {
+  return ALLOWED_STATUS_TRANSITIONS[currentStatus]?.includes(nextStatus) ?? false;
+}
+
 export async function getTeacherExams(teacherId) {
   const examsResult = await pool.query(
     `SELECT *
@@ -261,4 +271,31 @@ export async function updateExam(examId, teacherId, input) {
   } finally {
     client.release();
   }
+}
+
+export async function updateExamStatus(examId, teacherId, nextStatus) {
+  if (!['published', 'closed'].includes(nextStatus)) {
+    throw createError(400, 'Status must be published or closed.');
+  }
+
+  const examRow = await getOwnedExamRow(examId, teacherId);
+
+  if (!examRow) {
+    throw createError(404, 'Exam was not found.');
+  }
+
+  if (!canChangeStatus(examRow.status, nextStatus)) {
+    throw createError(400, 'This status change is not allowed.');
+  }
+
+  const result = await pool.query(
+    `UPDATE exams
+     SET status = $1
+     WHERE id = $2
+     RETURNING *`,
+    [nextStatus, examId],
+  );
+
+  const questionsByExamId = await fetchQuestionsForExams([examId]);
+  return mapExamRow(result.rows[0], questionsByExamId.get(examId) || []);
 }
