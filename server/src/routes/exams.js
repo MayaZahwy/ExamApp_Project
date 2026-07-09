@@ -5,7 +5,10 @@ import { authenticate, requireRole } from '../middleware/auth.js';
 
 const router = Router();
 const teacherOnly = [authenticate, requireRole('teacher')];
+const studentOnly = [authenticate, requireRole('student')];
 
+router.get('/available', ...studentOnly, examController.getAvailable);
+router.get('/available/:id', ...studentOnly, examController.getAvailableById);
 router.get('/mine', ...teacherOnly, examController.getMine);
 router.post('/', ...teacherOnly, examController.create);
 router.get(
