@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { examService, notifyService, submissionService } from '../../services'
 
 function TakeExamPage({ currentUser, onNavigate, params }) {
@@ -7,6 +7,8 @@ function TakeExamPage({ currentUser, onNavigate, params }) {
   const [result, setResult] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [timeLeftSeconds, setTimeLeftSeconds] = useState(null)
+  const hasAutoSubmittedRef = useRef(false)
 
   useEffect(() => {
     examService
@@ -22,20 +24,31 @@ function TakeExamPage({ currentUser, onNavigate, params }) {
     }))
   }
 
-  async function handleSubmit(event) {
-    event.preventDefault()
+  function formatTime(seconds) {
+    const safeSeconds = Math.max(0, Number(seconds) || 0)
+    const minutes = Math.floor(safeSeconds / 60)
+    const remainingSeconds = safeSeconds % 60
+    return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`
+  }
 
-    const hasAnsweredAllQuestions = exam.questions.every((question) => {
-      const value = answers[question.id]
-      if (typeof value === 'string') {
-        return value.trim().length > 0
-      }
-      return value !== undefined && value !== null
-    })
-
-    if (!hasAnsweredAllQuestions) {
-      notifyService.error('Please answer every question before submitting.')
+  async function submitExam({ requireAllAnswers }) {
+    if (!exam || isSubmitting || result) {
       return
+    }
+
+    if (requireAllAnswers) {
+      const hasAnsweredAllQuestions = exam.questions.every((question) => {
+        const value = answers[question.id]
+        if (typeof value === 'string') {
+          return value.trim().length > 0
+        }
+        return value !== undefined && value !== null
+      })
+
+      if (!hasAnsweredAllQuestions) {
+        notifyService.error('Please answer every question before submitting.')
+        return
+      }
     }
 
     setIsSubmitting(true)
@@ -54,6 +67,48 @@ function TakeExamPage({ currentUser, onNavigate, params }) {
       setIsSubmitting(false)
     }
   }
+
+  async function handleSubmit(event) {
+    event.preventDefault()
+    await submitExam({ requireAllAnswers: true })
+  }
+
+  useEffect(() => {
+    if (!exam || result) {
+      return
+    }
+
+    const durationSeconds = (Number(exam.durationMinutes) || 30) * 60
+    setTimeLeftSeconds(durationSeconds)
+    hasAutoSubmittedRef.current = false
+  }, [exam, result])
+
+  useEffect(() => {
+    if (timeLeftSeconds === null || timeLeftSeconds <= 0 || isSubmitting || result) {
+      return
+    }
+
+    const intervalId = window.setInterval(() => {
+      setTimeLeftSeconds((currentTime) => {
+        if (currentTime === null) {
+          return 0
+        }
+        return Math.max(0, currentTime - 1)
+      })
+    }, 1000)
+
+    return () => window.clearInterval(intervalId)
+  }, [timeLeftSeconds, isSubmitting, result])
+
+  useEffect(() => {
+    if (timeLeftSeconds !== 0 || hasAutoSubmittedRef.current || isSubmitting || result) {
+      return
+    }
+
+    hasAutoSubmittedRef.current = true
+    notifyService.error('Time is up. Submitting your exam now.')
+    submitExam({ requireAllAnswers: false })
+  }, [timeLeftSeconds, isSubmitting, result])
 
   if (isLoading) {
     return (
@@ -103,6 +158,10 @@ function TakeExamPage({ currentUser, onNavigate, params }) {
           <h1>{exam.title}</h1>
           <p>{exam.description || 'No description provided.'}</p>
         </div>
+        <div className="result-score">
+          <strong>{formatTime(timeLeftSeconds)}</strong>
+          <span>Time left</span>
+        </div>
       </section>
 
       <form className="content-panel exam-taking-form" onSubmit={handleSubmit}>
@@ -112,17 +171,31 @@ function TakeExamPage({ currentUser, onNavigate, params }) {
               {questionIndex + 1}. {question.text}
             </legend>
 
-            {question.options.map((option) => (
-              <label key={option.id}>
-                <input
-                  checked={answers[question.id] === option.id}
+            {question.type === 'OPEN_ENDED' ? (
+              <label>
+                Your answer
+                <textarea
                   name={question.id}
-                  onChange={() => selectAnswer(question.id, option.id)}
-                  type="radio"
+                  onChange={(event) =>
+                    selectAnswer(question.id, event.target.value)
+                  }
+                  rows="4"
+                  value={answers[question.id] ?? ''}
                 />
-                {option.text}
               </label>
-            ))}
+            ) : (
+              question.options.map((option) => (
+                <label key={option.id}>
+                  <input
+                    checked={answers[question.id] === option.id}
+                    name={question.id}
+                    onChange={() => selectAnswer(question.id, option.id)}
+                    type="radio"
+                  />
+                  {option.text}
+                </label>
+              ))
+            )}
           </fieldset>
         ))}
 
