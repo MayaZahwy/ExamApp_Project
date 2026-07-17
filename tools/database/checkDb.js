@@ -34,7 +34,7 @@ async function checkDatabase() {
     console.log(total === 0 ? 'Tables exist but no data yet.' : 'Database is ready.');
   } catch (error) {
     console.error('Failed:', error.message);
-    process.exit(1);
+    process.exitCode = 1;
   } finally {
     await pool.end();
   }

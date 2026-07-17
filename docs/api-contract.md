@@ -582,7 +582,7 @@ Teacher manually grades open-ended answers and optionally adds feedback. Recalcu
 
 ## Database schema (target)
 
-Tables aligned with frontend models (see `server/src/db/schema.sql`):
+Tables aligned with frontend models (see `tools/database/schema.sql`):
 
 - **users** — `id`, `full_name`, `email`, `password`, `role`, `created_at`
 - **exams** — `id`, `title`, `description`, `teacher_id`, `duration_minutes`, `status`, `available_from`, `available_until`, `passing_grade`, `created_at`

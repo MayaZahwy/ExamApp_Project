@@ -13,13 +13,13 @@ Build a course-ready Exam Management System where:
 ## Repository Structure
 
 - `client/` - React + Vite frontend
-- `server/` - legacy monolith (kept for DB seed/check scripts; prefer microservices below)
 - `services/` - backend microservices + API gateway
   - `gateway/` - public entrypoint (proxies to auth/exams/submissions)
   - `auth/` - register, login, `/me`
   - `exams/` - exam CRUD and catalogue
   - `submissions/` - submit, grade, results
 - `packages/common/` - shared DB pool, JWT auth, config
+- `tools/database/` - schema, seed, connectivity, and diagnostic scripts
 - `docs/` - contracts and integration notes
 - `diagrams/` - architecture and ERD diagrams
 - `docker-compose.yml` - local client + gateway + microservices (Supabase stays hosted)
@@ -121,13 +121,7 @@ Browser → client(:8080) → gateway(:3000) → auth | exams | submissions → 
 cp .env.example .env
 ```
 
-Fill in your Supabase `DATABASE_URL`, `JWT_SECRET`, and related vars. See `.env.example` for the full list. You can also run Compose with:
-
-```bash
-docker compose --env-file server/.env up --build
-```
-
-(add `CORS_ORIGIN=http://localhost:8080` to that file for the Docker UI).
+Fill in your Supabase `DATABASE_URL`, `JWT_SECRET`, and related vars. See `.env.example` for the full list.
 
 ### 2) Start the stack
 
@@ -140,7 +134,8 @@ docker compose up --build
 
 Stop with `Ctrl+C` or `docker compose down`.
 
-You can still use `npm run dev` in `client/` and the legacy `server/` for day-to-day development without Docker.
+You can still use `npm run dev` in `client/` and each folder under `services/`
+for day-to-day development without Docker.
 
 ## Deployment
 
@@ -176,4 +171,22 @@ Env for gateway: `CORS_ORIGIN`, `AUTH_SERVICE_URL`, `EXAMS_SERVICE_URL`, `SUBMIS
 
 Keep Vercel `VITE_API_URL` pointed at the **gateway** so the frontend does not change.
 
-The legacy monolith under `server/` remains for DB scripts and as a fallback until the four services are live on Render.
+## Database tools
+
+Install and check the hosted database:
+
+```bash
+npm install --prefix tools/database
+npm run check --prefix tools/database
+```
+
+Other commands:
+
+```bash
+npm run test --prefix tools/database
+npm run seed --prefix tools/database
+```
+
+The seed command is destructive: it drops all application tables, recreates the
+schema, and inserts demo data. Never run it against production unless a full
+database reset is intentional.
