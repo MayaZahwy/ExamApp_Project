@@ -16,6 +16,8 @@ Build a course-ready Exam Management System where:
 - `server/` - backend and database (owned by backend developer; do not edit from frontend tasks)
 - `docs/` - contracts and integration notes
 - `diagrams/` - architecture and ERD diagrams
+- `docker-compose.yml` - local client + server containers (Supabase stays hosted)
+- `.env.example` - env template for Docker Compose
 
 ## Tech Stack
 
@@ -99,8 +101,52 @@ Demo accounts depend on backend seed data when API mode is enabled.
 - Open small PRs to `dev` (not `main`)
 - Keep commits focused and reviewable (one feature per commit)
 
-## Deployment (Later)
+## Docker (local)
 
-- Frontend can be deployed to Vercel/Netlify after API is ready.
-- Set `VITE_API_URL` to production backend URL.
-- Docker setup is not part of current frontend phase.
+Runs the **client** (nginx) and **server** (Express) in containers. The database stays on **hosted Supabase** — Compose does not start Postgres.
+
+### 1) Create root `.env`
+
+```bash
+cp .env.example .env
+```
+
+Fill in your Supabase `DATABASE_URL`, `JWT_SECRET`, and related vars. See `.env.example` for the full list.
+
+### 2) Start the stack
+
+```bash
+docker compose up --build
+```
+
+- App UI: `http://localhost:8080`
+- API: `http://localhost:3000` (health: `GET /api/health`)
+
+Stop with `Ctrl+C` or `docker compose down`.
+
+You can still use `npm run dev` in `client/` and `server/` for day-to-day development without Docker.
+
+## Deployment
+
+| Platform | What | Docker? |
+|----------|------|---------|
+| **Vercel** | Frontend (`client/`) | No — native Vite build |
+| **Render** | API (`server/`) | Yes — use `server/Dockerfile` |
+| **Supabase** | Postgres | Outside Docker |
+
+### Vercel (client)
+
+- Root directory: `client`
+- Build command: `npm run build`
+- Output directory: `dist`
+- Env: `VITE_API_URL` = your Render API URL; `VITE_USE_MOCK_API=false`
+
+### Render (server)
+
+- Environment: Docker
+- Dockerfile path: `server/Dockerfile`
+- Env: `DATABASE_URL`, `DATABASE_SSL=true`, `JWT_SECRET`, `CORS_ORIGIN` = your Vercel URL, `PORT=3000`, `NODE_ENV=production`
+
+### Microservices (later)
+
+Split the Express API into more services; add a Dockerfile per service and extra Compose/Render services. Client (Vercel) and Supabase stay the same.
