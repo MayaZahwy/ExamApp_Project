@@ -11,6 +11,7 @@ router.get('/available/:id', ...studentOnly, examController.getAvailableById);
 router.get('/mine', ...teacherOnly, examController.getMine);
 router.post('/', ...teacherOnly, examController.create);
 router.patch('/:id/status', ...teacherOnly, examController.updateStatus);
+router.post('/:id/publish-results', ...teacherOnly, examController.publishResults);
 router.get('/:id', ...teacherOnly, examController.getById);
 router.put('/:id', ...teacherOnly, examController.update);
 

@@ -49,27 +49,44 @@ function MyResultsPage({ currentUser }) {
           <p>No submitted exams yet.</p>
         ) : (
           <div className="results-list">
-            {results.map((result) => (
-              <article className="result-row" key={result.id}>
-                <div>
-                  <h2>{result.exam?.title ?? 'Unknown exam'}</h2>
-                  <p>Submitted: {formatDate(result.submittedAt)}</p>
-                  <p>
-                    Feedback:{' '}
-                    {result.feedback && result.feedback.trim().length > 0
-                      ? result.feedback
-                      : 'No lecturer feedback yet.'}
-                  </p>
-                </div>
+            {results.map((result) => {
+              const resultsPublished = Boolean(result.resultsPublished)
 
-                <div className="result-score">
-                  <strong>{result.percentage}%</strong>
-                  <span>
-                    {result.score} / {result.maxScore}
-                  </span>
-                </div>
-              </article>
-            ))}
+              return (
+                <article className="result-row" key={result.id}>
+                  <div>
+                    <h2>{result.exam?.title ?? 'Unknown exam'}</h2>
+                    <p>Submitted: {formatDate(result.submittedAt)}</p>
+                    {resultsPublished ? (
+                      <p>
+                        Feedback:{' '}
+                        {result.feedback && result.feedback.trim().length > 0
+                          ? result.feedback
+                          : 'No lecturer feedback yet.'}
+                      </p>
+                    ) : (
+                      <p>Your grade is not available yet. Waiting for the lecturer to publish results.</p>
+                    )}
+                  </div>
+
+                  <div className="result-score">
+                    {resultsPublished ? (
+                      <>
+                        <strong>{result.percentage}%</strong>
+                        <span>
+                          {result.score} / {result.maxScore}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <strong>—</strong>
+                        <span>Pending publication</span>
+                      </>
+                    )}
+                  </div>
+                </article>
+              )
+            })}
           </div>
         )}
       </section>

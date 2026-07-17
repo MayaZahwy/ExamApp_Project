@@ -26,6 +26,7 @@ function mapExamForStudent(examRow, questionRows) {
     availableFrom: examRow.available_from,
     availableUntil: examRow.available_until,
     passingGrade: examRow.passing_grade,
+    resultsPublished: Boolean(examRow.results_published),
     questions,
   };
 }
@@ -39,14 +40,6 @@ function mapQuestionForTeacher(row) {
     options: row.options,
     correctOptionId: row.correct_option_id,
     points: row.points,
-  };
-}
-
-function mapExamSummary(examRow) {
-  return {
-    id: examRow.id,
-    title: examRow.title,
-    status: examRow.status,
   };
 }
 
@@ -66,6 +59,7 @@ function mapExamDetail(examRow, questionRows, includeCorrectAnswers) {
     availableFrom: examRow.available_from,
     availableUntil: examRow.available_until,
     passingGrade: examRow.passing_grade,
+    resultsPublished: Boolean(examRow.results_published),
     questions,
   };
 }
@@ -82,8 +76,25 @@ function mapSubmissionRow(row, exam = null, extras = {}) {
     submittedAt: row.submitted_at,
     status: row.status,
     feedback: row.feedback ?? null,
+    resultsPublished: Boolean(
+      extras.resultsPublished ?? exam?.resultsPublished ?? row.results_published,
+    ),
     ...(extras.studentName ? { studentName: extras.studentName } : {}),
     ...(exam ? { exam } : {}),
+  };
+}
+
+function redactGradesForStudent(submission) {
+  if (submission.resultsPublished) {
+    return submission;
+  }
+
+  return {
+    ...submission,
+    score: null,
+    maxScore: null,
+    percentage: null,
+    feedback: null,
   };
 }
 
@@ -214,7 +225,7 @@ export async function submitExam(studentId, input) {
   );
 
   const exam = mapExamForStudent(examRow, questionRows);
-  return mapSubmissionRow(result.rows[0], exam);
+  return redactGradesForStudent(mapSubmissionRow(result.rows[0], exam));
 }
 
 async function getSubmissionRecord(submissionId) {
@@ -256,7 +267,11 @@ function assertSubmissionAccess(submissionRow, user) {
 
 export async function getStudentSubmissions(studentId) {
   const result = await pool.query(
-    `SELECT s.*, e.id AS exam_ref_id, e.title AS exam_title, e.status AS exam_status
+    `SELECT s.*,
+            e.id AS exam_ref_id,
+            e.title AS exam_title,
+            e.status AS exam_status,
+            e.results_published
      FROM submissions s
      JOIN exams e ON e.id = s.exam_id
      WHERE s.student_id = $1
@@ -265,17 +280,24 @@ export async function getStudentSubmissions(studentId) {
   );
 
   return result.rows.map((row) =>
-    mapSubmissionRow(row, {
-      id: row.exam_ref_id,
-      title: row.exam_title,
-      status: row.exam_status,
-    }),
+    redactGradesForStudent(
+      mapSubmissionRow(
+        row,
+        {
+          id: row.exam_ref_id,
+          title: row.exam_title,
+          status: row.exam_status,
+          resultsPublished: Boolean(row.results_published),
+        },
+        { resultsPublished: Boolean(row.results_published) },
+      ),
+    ),
   );
 }
 
 export async function getExamSubmissionsForTeacher(examId, teacherId) {
   const examResult = await pool.query(
-    `SELECT id
+    `SELECT id, results_published
      FROM exams
      WHERE id = $1 AND teacher_id = $2`,
     [examId, teacherId],
@@ -284,6 +306,8 @@ export async function getExamSubmissionsForTeacher(examId, teacherId) {
   if (!examResult.rows[0]) {
     throw createError(404, 'Exam was not found.');
   }
+
+  const resultsPublished = Boolean(examResult.rows[0].results_published);
 
   const result = await pool.query(
     `SELECT s.*, u.full_name AS student_name
@@ -295,7 +319,10 @@ export async function getExamSubmissionsForTeacher(examId, teacherId) {
   );
 
   return result.rows.map((row) =>
-    mapSubmissionRow(row, null, { studentName: row.student_name }),
+    mapSubmissionRow(row, null, {
+      studentName: row.student_name,
+      resultsPublished,
+    }),
   );
 }
 
@@ -314,7 +341,15 @@ export async function getSubmissionById(submissionId, user) {
     includeCorrectAnswers,
   );
 
-  return mapSubmissionRow(submissionRow, exam);
+  const submission = mapSubmissionRow(submissionRow, exam, {
+    resultsPublished: Boolean(examResult.rows[0]?.results_published),
+  });
+
+  if (user.role === 'student') {
+    return redactGradesForStudent(submission);
+  }
+
+  return submission;
 }
 
 export async function gradeSubmission(submissionId, teacherId, input) {

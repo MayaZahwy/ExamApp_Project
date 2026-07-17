@@ -49,6 +49,15 @@ export async function updateStatus(req, res, next) {
   }
 }
 
+export async function publishResults(req, res, next) {
+  try {
+    const exam = await examService.publishExamResults(req.params.id, req.user.id);
+    res.status(200).json(exam);
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function getAvailable(req, res, next) {
   try {
     const exams = await examService.getAvailableExams();

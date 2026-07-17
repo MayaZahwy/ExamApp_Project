@@ -25,6 +25,7 @@ CREATE TABLE exams (
   available_from TIMESTAMP WITH TIME ZONE,
   available_until TIMESTAMP WITH TIME ZONE,
   passing_grade INTEGER NOT NULL DEFAULT 60,
+  results_published BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -78,7 +79,7 @@ INSERT INTO users (id, full_name, email, password, role) VALUES
 
 INSERT INTO exams (
   id, title, description, teacher_id, duration_minutes, status,
-  available_from, available_until, passing_grade
+  available_from, available_until, passing_grade, results_published
 ) VALUES
 (
   'b0000000-0000-4000-8000-000000000001',
@@ -89,7 +90,8 @@ INSERT INTO exams (
   'published',
   '2026-05-01T08:00:00.000Z',
   '2026-06-01T20:00:00.000Z',
-  60
+  60,
+  TRUE
 ),
 (
   'b0000000-0000-4000-8000-000000000002',
@@ -100,7 +102,8 @@ INSERT INTO exams (
   'published',
   '2026-05-10T08:00:00.000Z',
   '2026-06-10T20:00:00.000Z',
-  60
+  60,
+  FALSE
 ),
 (
   'b0000000-0000-4000-8000-000000000003',
@@ -111,7 +114,8 @@ INSERT INTO exams (
   'draft',
   NULL,
   NULL,
-  60
+  60,
+  FALSE
 );
 
 INSERT INTO questions (
