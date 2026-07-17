@@ -139,6 +139,20 @@ for day-to-day development without Docker.
 
 ## Deployment
 
+### Live application
+
+| Component | URL |
+|-----------|-----|
+| Frontend (Vercel) | https://exam-app-project-woad.vercel.app |
+| API gateway (Render) | https://examapp-project.onrender.com |
+| Gateway health | https://examapp-project.onrender.com/api/health |
+| Auth service | https://exam-app-auth.onrender.com |
+| Exams service | https://exam-app-exams.onrender.com |
+| Submissions service | https://exam-app-submissions.onrender.com |
+
+Render Free services sleep after inactivity, so the first request can take up
+to about 50 seconds while a service starts.
+
 | Platform | What | Docker? |
 |----------|------|---------|
 | **Vercel** | Frontend (`client/`) | No — native Vite build |
