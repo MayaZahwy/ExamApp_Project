@@ -12,11 +12,17 @@ Build a course-ready Exam Management System where:
 
 ## Repository Structure
 
-- `client/` - React + Vite frontend (owned by frontend developer)
-- `server/` - backend and database (owned by backend developer; do not edit from frontend tasks)
+- `client/` - React + Vite frontend
+- `server/` - legacy monolith (kept for DB seed/check scripts; prefer microservices below)
+- `services/` - backend microservices + API gateway
+  - `gateway/` - public entrypoint (proxies to auth/exams/submissions)
+  - `auth/` - register, login, `/me`
+  - `exams/` - exam CRUD and catalogue
+  - `submissions/` - submit, grade, results
+- `packages/common/` - shared DB pool, JWT auth, config
 - `docs/` - contracts and integration notes
 - `diagrams/` - architecture and ERD diagrams
-- `docker-compose.yml` - local client + server containers (Supabase stays hosted)
+- `docker-compose.yml` - local client + gateway + microservices (Supabase stays hosted)
 - `.env.example` - env template for Docker Compose
 
 ## Tech Stack
@@ -103,7 +109,11 @@ Demo accounts depend on backend seed data when API mode is enabled.
 
 ## Docker (local)
 
-Runs the **client** (nginx) and **server** (Express) in containers. The database stays on **hosted Supabase** — Compose does not start Postgres.
+Runs the **client** (nginx), **API gateway**, and **auth / exams / submissions** microservices. The database stays on **hosted Supabase** — Compose does not start Postgres.
+
+```text
+Browser → client(:8080) → gateway(:3000) → auth | exams | submissions → Supabase
+```
 
 ### 1) Create root `.env`
 
@@ -111,7 +121,13 @@ Runs the **client** (nginx) and **server** (Express) in containers. The database
 cp .env.example .env
 ```
 
-Fill in your Supabase `DATABASE_URL`, `JWT_SECRET`, and related vars. See `.env.example` for the full list.
+Fill in your Supabase `DATABASE_URL`, `JWT_SECRET`, and related vars. See `.env.example` for the full list. You can also run Compose with:
+
+```bash
+docker compose --env-file server/.env up --build
+```
+
+(add `CORS_ORIGIN=http://localhost:8080` to that file for the Docker UI).
 
 ### 2) Start the stack
 
@@ -120,18 +136,18 @@ docker compose up --build
 ```
 
 - App UI: `http://localhost:8080`
-- API: `http://localhost:3000` (health: `GET /api/health`)
+- API gateway: `http://localhost:3000` (health: `GET /api/health`)
 
 Stop with `Ctrl+C` or `docker compose down`.
 
-You can still use `npm run dev` in `client/` and `server/` for day-to-day development without Docker.
+You can still use `npm run dev` in `client/` and the legacy `server/` for day-to-day development without Docker.
 
 ## Deployment
 
 | Platform | What | Docker? |
 |----------|------|---------|
 | **Vercel** | Frontend (`client/`) | No — native Vite build |
-| **Render** | API (`server/`) | Yes — use `server/Dockerfile` |
+| **Render** | Gateway + 3 microservices | Yes — one Web Service per Dockerfile under `services/` |
 | **Supabase** | Postgres | Outside Docker |
 
 ### Vercel (client)
@@ -139,14 +155,25 @@ You can still use `npm run dev` in `client/` and `server/` for day-to-day develo
 - Root directory: `client`
 - Build command: `npm run build`
 - Output directory: `dist`
-- Env: `VITE_API_URL` = your Render API URL; `VITE_USE_MOCK_API=false`
+- Env: `VITE_API_URL` = your **gateway** Render URL; `VITE_USE_MOCK_API=false`
 
-### Render (server)
+### Render (microservices)
 
-- Environment: Docker
-- Dockerfile path: `server/Dockerfile`
-- Env: `DATABASE_URL`, `DATABASE_SSL=true`, `JWT_SECRET`, `CORS_ORIGIN` = your Vercel URL, `PORT=3000`, `NODE_ENV=production`
+Create **four** Docker Web Services (same GitHub repo, branch `dev`):
 
-### Microservices (later)
+| Service | Dockerfile Path | Default port |
+|---------|-----------------|--------------|
+| gateway (public API URL) | `services/gateway/Dockerfile` | 3000 |
+| auth | `services/auth/Dockerfile` | 3001 |
+| exams | `services/exams/Dockerfile` | 3002 |
+| submissions | `services/submissions/Dockerfile` | 3003 |
 
-Split the Express API into more services; add a Dockerfile per service and extra Compose/Render services. Client (Vercel) and Supabase stay the same.
+Dockerfiles expect build context = **repository root**. On Render set **Docker Build Context Directory** to `.` and **Dockerfile Path** as above.
+
+Env for auth / exams / submissions: `DATABASE_URL`, `DATABASE_SSL=true`, `JWT_SECRET`, `CORS_ORIGIN` (Vercel URL), `NODE_ENV=production`, plus matching `PORT`.
+
+Env for gateway: `CORS_ORIGIN`, `AUTH_SERVICE_URL`, `EXAMS_SERVICE_URL`, `SUBMISSIONS_SERVICE_URL`, `NODE_ENV=production`.
+
+Keep Vercel `VITE_API_URL` pointed at the **gateway** so the frontend does not change.
+
+The legacy monolith under `server/` remains for DB scripts and as a fallback until the four services are live on Render.

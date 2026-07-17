@@ -1,0 +1,14 @@
+{
+  "name": "exam-app-submissions",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "dependencies": {
+    "@exam-app/common": "file:../../packages/common",
+    "cors": "^2.8.5",
+    "express": "^5.2.1"
+  }
+}
