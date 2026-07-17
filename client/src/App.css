@@ -256,8 +256,8 @@ button:disabled {
 .notification {
   position: fixed;
   right: 20px;
-  top: 82px;
-  z-index: 10;
+  top: 96px;
+  z-index: 1000;
   max-width: min(360px, calc(100vw - 40px));
   border-radius: 8px;
   padding: 13px 16px;
@@ -580,10 +580,11 @@ button:disabled {
   padding: 18px;
 }
 
-.take-question legend {
+.take-question-title {
+  margin: 0;
   color: #101828;
+  font-size: 16px;
   font-weight: 700;
-  padding: 0 6px;
 }
 
 .take-question label {
@@ -600,9 +601,97 @@ button:disabled {
     border-color 0.15s ease;
 }
 
+.take-question .open-ended-answer {
+  align-items: stretch;
+  flex-direction: column;
+}
+
+.take-question .open-ended-answer textarea {
+  width: 100%;
+  min-height: 120px;
+  resize: vertical;
+  border: 1px solid #d0d5dd;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font: inherit;
+}
+
 .take-question label:has(input:checked) {
   border-color: #315b9c;
   background: #eff6ff;
+}
+
+.manual-grading-form {
+  display: grid;
+  gap: 18px;
+}
+
+.manual-grading-form > h2 {
+  margin: 0;
+}
+
+.grading-question {
+  gap: 16px;
+}
+
+.grading-question-title {
+  margin: 0;
+  color: #172033;
+  font-size: 20px;
+}
+
+.grading-answer {
+  border-left: 4px solid #8aa8d6;
+  border-radius: 4px;
+  background: #f8fafc;
+  padding: 12px 14px;
+}
+
+.grading-answer span,
+.grading-field > span {
+  color: #475467;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.grading-answer p {
+  margin: 6px 0 0;
+  color: #172033;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.take-question .grading-field,
+.grading-field {
+  display: grid;
+  align-items: stretch;
+  gap: 8px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.grading-field input,
+.grading-field textarea {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font: inherit;
+}
+
+.grading-field input[type='number'] {
+  max-width: 180px;
+}
+
+.grading-field textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.grading-feedback {
+  border-top: 1px solid #e4e7ec;
+  padding-top: 18px;
 }
 
 .result-panel {
@@ -617,6 +706,15 @@ button:disabled {
   color: #315b9c;
   font-size: 52px;
   line-height: 1;
+}
+
+.result-pending-note {
+  border: 1px solid #f5c26b;
+  border-radius: 8px;
+  background: #fffaeb;
+  padding: 12px 14px;
+  color: #7a4b00;
+  font-weight: 600;
 }
 
 .results-list {
