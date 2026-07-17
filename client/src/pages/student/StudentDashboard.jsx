@@ -34,7 +34,10 @@ function StudentDashboard({ currentUser, onNavigate }) {
         </article>
         <article>
           <span>Latest grade</span>
-          <strong>{results[0]?.percentage ?? 0}%</strong>
+          <strong>
+            {results.find((result) => result.resultsPublished)?.percentage ?? '—'}
+            {results.find((result) => result.resultsPublished) ? '%' : ''}
+          </strong>
         </article>
       </section>
 

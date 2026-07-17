@@ -10,6 +10,7 @@ function ExamSubmissionsPage({ currentUser, onNavigate, params }) {
   const [selectedSubmission, setSelectedSubmission] = useState(null)
   const [isReviewLoading, setIsReviewLoading] = useState(false)
   const [isSavingGrade, setIsSavingGrade] = useState(false)
+  const [isPublishingResults, setIsPublishingResults] = useState(false)
   const [questionGrades, setQuestionGrades] = useState({})
   const [feedback, setFeedback] = useState('')
 
@@ -39,6 +40,32 @@ function ExamSubmissionsPage({ currentUser, onNavigate, params }) {
       currentUser.id,
     )
     setSubmissions(nextSubmissions)
+  }
+
+  async function handlePublishResults() {
+    if (!exam || exam.resultsPublished) {
+      return
+    }
+
+    const confirmed = window.confirm(
+      'Publish results for this exam? Students will be able to see their grades and feedback.',
+    )
+
+    if (!confirmed) {
+      return
+    }
+
+    setIsPublishingResults(true)
+    try {
+      const updatedExam = await examService.publishResults(exam.id, currentUser.id)
+      setExam(updatedExam)
+      await refreshSubmissions()
+      notifyService.success('Results published. Students can now see their grades.')
+    } catch (error) {
+      notifyService.error(error.message)
+    } finally {
+      setIsPublishingResults(false)
+    }
   }
 
   async function handleReview(submissionId) {
@@ -86,7 +113,11 @@ function ExamSubmissionsPage({ currentUser, onNavigate, params }) {
         feedback,
       )
       await refreshSubmissions()
-      notifyService.success('Submission graded successfully.')
+      notifyService.success(
+        exam?.resultsPublished
+          ? 'Submission graded successfully.'
+          : 'Submission graded. Publish results when you are ready for students to see grades.',
+      )
     } catch (error) {
       notifyService.error(error.message)
     } finally {
@@ -131,6 +162,7 @@ function ExamSubmissionsPage({ currentUser, onNavigate, params }) {
     selectedSubmission?.exam?.questions?.filter(
       (question) => question.type === 'OPEN_ENDED',
     ) ?? []
+  const resultsPublished = Boolean(exam.resultsPublished)
 
   return (
     <main className="page-shell">
@@ -143,6 +175,30 @@ function ExamSubmissionsPage({ currentUser, onNavigate, params }) {
         <button type="button" onClick={() => onNavigate('/teacher/exams')}>
           Back to exams
         </button>
+      </section>
+
+      <section className="content-panel">
+        <div className="section-heading">
+          <div>
+            <h2>Results visibility</h2>
+            <p>
+              {resultsPublished
+                ? 'Results are published. Students can see grades and feedback.'
+                : 'Results are hidden. Grade submissions first, then publish when ready.'}
+            </p>
+          </div>
+          {resultsPublished ? (
+            <span className="status-badge status-graded">Published</span>
+          ) : (
+            <button
+              disabled={isPublishingResults || exam.status === 'draft'}
+              onClick={handlePublishResults}
+              type="button"
+            >
+              {isPublishingResults ? 'Publishing...' : 'Publish results'}
+            </button>
+          )}
+        </div>
       </section>
 
       <section className="content-panel">

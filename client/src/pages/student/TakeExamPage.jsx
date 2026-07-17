@@ -151,22 +151,28 @@ function TakeExamPage({ currentUser, onNavigate, params }) {
   }
 
   if (result) {
-    const hasOpenEndedQuestions = exam.questions.some(isOpenEndedQuestion)
+    const resultsPublished = Boolean(result.resultsPublished)
 
     return (
       <main className="page-shell">
         <section className="content-panel result-panel">
-          <p className="eyebrow">Result</p>
+          <p className="eyebrow">Submitted</p>
           <h1>{exam.title}</h1>
-          <strong>{result.percentage}%</strong>
-          <p>
-            Score: {result.score} / {result.maxScore}
-          </p>
-          {hasOpenEndedQuestions && (
-            <p className="result-pending-note" role="status">
-              This is not your final grade. Your teacher will review the
-              open-ended questions and publish the final grade.
-            </p>
+          {resultsPublished ? (
+            <>
+              <strong>{result.percentage}%</strong>
+              <p>
+                Score: {result.score} / {result.maxScore}
+              </p>
+            </>
+          ) : (
+            <>
+              <strong>Submitted</strong>
+              <p className="result-pending-note" role="status">
+                Your answers were saved. Your grade will appear after the
+                lecturer publishes results.
+              </p>
+            </>
           )}
           <button type="button" onClick={() => onNavigate('/student/exams')}>
             Back to available exams

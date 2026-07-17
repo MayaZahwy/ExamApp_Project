@@ -88,6 +88,7 @@ ISO 8601 strings in UTC, e.g. `2026-05-15T13:30:00.000Z`.
 | `availableFrom` | `availableFrom` | `exams.available_from` |
 | `availableUntil` | `availableUntil` | `exams.available_until` |
 | — | `passingGrade` | `exams.passing_grade` |
+| `resultsPublished` | `resultsPublished` | `exams.results_published` |
 | `questions` *(attached)* | `questions` | joined from `questions` table |
 
 ### Question
@@ -120,6 +121,7 @@ For `OPEN_ENDED` questions: `options` is `[]`, `correctOptionId` is `null`.
 | `submittedAt` | `submittedAt` | `submissions.submitted_at` |
 | `status` | `status` | `submissions.status` |
 | — | `feedback` | `submissions.feedback` |
+| — | `resultsPublished` | derived from `exams.results_published` |
 
 Answer item shapes:
 
@@ -370,6 +372,22 @@ Allowed values: `published`, `closed` (must follow allowed transition from curre
 **Response `200`:** Updated exam object.
 
 **Errors:** `400` invalid transition, `404`.
+
+---
+
+### `POST /api/exams/:id/publish-results`
+
+Release graded results so students can see scores and feedback for this exam.
+
+Until this is called, student APIs return submissions with `resultsPublished: false` and hide `score`, `maxScore`, `percentage`, and `feedback`.
+
+**Auth:** teacher (owner only)
+
+**Request body:** none
+
+**Response `200`:** Updated exam object (`resultsPublished: true`).
+
+**Errors:** `400` if exam is still draft, `404`.
 
 ---
 

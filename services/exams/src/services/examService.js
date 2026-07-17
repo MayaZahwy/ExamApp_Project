@@ -36,6 +36,7 @@ function mapExamRow(row, questions) {
     availableFrom: row.available_from,
     availableUntil: row.available_until,
     passingGrade: row.passing_grade,
+    resultsPublished: Boolean(row.results_published),
     questions,
   };
 }
@@ -305,6 +306,34 @@ export async function updateExamStatus(examId, teacherId, nextStatus) {
      WHERE id = $2
      RETURNING *`,
     [nextStatus, examId],
+  );
+
+  const questionsByExamId = await fetchQuestionsForExams([examId]);
+  return mapExamRow(result.rows[0], questionsByExamId.get(examId) || []);
+}
+
+export async function publishExamResults(examId, teacherId) {
+  const examRow = await getOwnedExamRow(examId, teacherId);
+
+  if (!examRow) {
+    throw createError(404, 'Exam was not found.');
+  }
+
+  if (examRow.status === 'draft') {
+    throw createError(400, 'Publish the exam before publishing results.');
+  }
+
+  if (examRow.results_published) {
+    const questionsByExamId = await fetchQuestionsForExams([examId]);
+    return mapExamRow(examRow, questionsByExamId.get(examId) || []);
+  }
+
+  const result = await pool.query(
+    `UPDATE exams
+     SET results_published = TRUE
+     WHERE id = $1
+     RETURNING *`,
+    [examId],
   );
 
   const questionsByExamId = await fetchQuestionsForExams([examId]);

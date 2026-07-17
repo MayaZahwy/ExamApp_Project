@@ -6,6 +6,7 @@
   "scripts": {
     "check": "node checkDb.js",
     "seed": "node seed.js",
+    "migrate": "node migrate.js",
     "test": "node testQueries.js"
   },
   "dependencies": {

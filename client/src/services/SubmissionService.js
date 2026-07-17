@@ -40,17 +40,36 @@ class SubmissionService {
         const examQuestions = questions.filter(
           (question) => question.examId === submission.examId,
         )
+        const resultsPublished = Boolean(exam?.resultsPublished)
         const maxScore =
           submission.maxScore ?? this.calculateMaxScore(examQuestions)
         const percentage =
           submission.percentage ??
           (maxScore > 0 ? Math.round((submission.score / maxScore) * 100) : 0)
 
-        return {
+        const result = {
           ...submission,
-          exam: exam ?? null,
+          exam: exam
+            ? {
+                ...exam,
+                resultsPublished,
+              }
+            : null,
           maxScore,
           percentage,
+          resultsPublished,
+        }
+
+        if (resultsPublished) {
+          return result
+        }
+
+        return {
+          ...result,
+          score: null,
+          maxScore: null,
+          percentage: null,
+          feedback: null,
         }
       })
       .sort((firstSubmission, secondSubmission) =>
@@ -180,6 +199,9 @@ class SubmissionService {
     const score = this.calculateScore(exam.questions, answers)
     const maxScore = this.calculateMaxScore(exam.questions)
     const percentage = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0
+    const hasOpenEnded = exam.questions.some(
+      (question) => question.type === 'OPEN_ENDED',
+    )
     const submission = new Submission({
       id: crypto.randomUUID(),
       examId,
@@ -189,14 +211,28 @@ class SubmissionService {
       maxScore,
       percentage,
       submittedAt: new Date().toISOString(),
-      status: 'graded',
+      status: hasOpenEnded ? 'partial' : 'graded',
     })
 
     await this.mockApiService.create('submissions', submission)
 
+    const resultsPublished = Boolean(exam.resultsPublished)
+
     return {
       ...submission,
-      exam,
+      exam: {
+        ...exam,
+        resultsPublished,
+      },
+      resultsPublished,
+      ...(resultsPublished
+        ? {}
+        : {
+            score: null,
+            maxScore: null,
+            percentage: null,
+            feedback: null,
+          }),
     }
   }
 

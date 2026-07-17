@@ -105,6 +105,7 @@ class ExamService {
       status: 'draft',
       availableFrom: null,
       availableUntil: null,
+      resultsPublished: false,
     })
 
     await this.mockApiService.create('exams', exam)
@@ -173,6 +174,29 @@ class ExamService {
 
     const updatedExam = await this.mockApiService.update('exams', examId, {
       status: nextStatus,
+    })
+    const questions = await this.mockApiService.getAll('questions')
+
+    return this.attachQuestions(updatedExam, questions)
+  }
+
+  async publishResults(examId, teacherId) {
+    if (!this.useMockApi()) {
+      return this.apiService.post(`/api/exams/${examId}/publish-results`)
+    }
+
+    const exam = await this.getExamForTeacher(examId, teacherId)
+
+    if (!exam) {
+      throw new Error('Exam was not found.')
+    }
+
+    if (exam.status === 'draft') {
+      throw new Error('Publish the exam before publishing results.')
+    }
+
+    const updatedExam = await this.mockApiService.update('exams', examId, {
+      resultsPublished: true,
     })
     const questions = await this.mockApiService.getAll('questions')
 

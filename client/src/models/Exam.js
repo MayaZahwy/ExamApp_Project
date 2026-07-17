@@ -9,6 +9,7 @@ class Exam {
     status,
     availableFrom,
     availableUntil,
+    resultsPublished = false,
   }) {
     this.id = id
     this.title = title
@@ -19,6 +20,7 @@ class Exam {
     this.status = status
     this.availableFrom = availableFrom
     this.availableUntil = availableUntil
+    this.resultsPublished = resultsPublished
   }
 }
 

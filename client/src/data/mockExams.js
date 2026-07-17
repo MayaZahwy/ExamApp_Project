@@ -11,6 +11,7 @@ export const mockExams = [
     status: 'published',
     availableFrom: '2026-05-01T08:00:00.000Z',
     availableUntil: '2026-06-01T20:00:00.000Z',
+    resultsPublished: true,
   }),
   new Exam({
     id: 'exam-science-1',
@@ -22,6 +23,7 @@ export const mockExams = [
     status: 'published',
     availableFrom: '2026-05-10T08:00:00.000Z',
     availableUntil: '2026-06-10T20:00:00.000Z',
+    resultsPublished: false,
   }),
   new Exam({
     id: 'exam-english-1',
@@ -33,5 +35,6 @@ export const mockExams = [
     status: 'draft',
     availableFrom: null,
     availableUntil: null,
+    resultsPublished: false,
   }),
 ]
