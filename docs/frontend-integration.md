@@ -6,7 +6,8 @@ This document describes how the React frontend in `client/` integrates with the 
 
 - Frontend only (`client/`)
 - API contract reference: `docs/api-contract.md`
-- Backend implementation is owned separately under `server/`
+- Backend implementation is split under `services/` and exposed through
+  `services/gateway/`
 
 ## Environment Configuration
 

@@ -1,0 +1,15 @@
+{
+  "name": "exam-app-database-tools",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node checkDb.js",
+    "seed": "node seed.js",
+    "test": "node testQueries.js"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "pg": "^8.22.0"
+  }
+}

@@ -1,13 +1,11 @@
--- Enable UUID generation and password hashing extensions
+-- WARNING: This script resets all application tables and inserts demo data.
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
--- Drop tables if they exist (in reverse order of dependencies)
 DROP TABLE IF EXISTS submissions;
 DROP TABLE IF EXISTS questions;
 DROP TABLE IF EXISTS exams;
 DROP TABLE IF EXISTS users;
 
--- 1. Users (aligned with client/src/models/User.js)
 CREATE TABLE users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   full_name VARCHAR(100) NOT NULL,
@@ -17,7 +15,6 @@ CREATE TABLE users (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- 2. Exams (aligned with client/src/models/Exam.js)
 CREATE TABLE exams (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title VARCHAR(150) NOT NULL,
@@ -31,7 +28,6 @@ CREATE TABLE exams (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- 3. Questions (aligned with client/src/models/Question.js)
 CREATE TABLE questions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   exam_id UUID REFERENCES exams(id) ON DELETE CASCADE NOT NULL,
@@ -44,7 +40,6 @@ CREATE TABLE questions (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- 4. Submissions (aligned with client/src/models/Submission.js)
 CREATE TABLE submissions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   exam_id UUID REFERENCES exams(id) ON DELETE CASCADE NOT NULL,
@@ -65,7 +60,6 @@ CREATE INDEX idx_questions_exam_id ON questions(exam_id);
 CREATE INDEX idx_submissions_exam_id ON submissions(exam_id);
 CREATE INDEX idx_submissions_student_id ON submissions(student_id);
 
--- Seed users (passwords hashed with bcrypt via pgcrypto)
 INSERT INTO users (id, full_name, email, password, role) VALUES
 (
   'a0000000-0000-4000-8000-000000000001',
@@ -82,9 +76,9 @@ INSERT INTO users (id, full_name, email, password, role) VALUES
   'student'
 );
 
--- Seed exams (aligned with client/src/data/mockExams.js)
 INSERT INTO exams (
-  id, title, description, teacher_id, duration_minutes, status, available_from, available_until, passing_grade
+  id, title, description, teacher_id, duration_minutes, status,
+  available_from, available_until, passing_grade
 ) VALUES
 (
   'b0000000-0000-4000-8000-000000000001',
@@ -120,7 +114,6 @@ INSERT INTO exams (
   60
 );
 
--- Seed questions (aligned with client/src/data/mockQuestions.js)
 INSERT INTO questions (
   id, exam_id, type, text, options, correct_option_id, points, sort_order
 ) VALUES
@@ -175,9 +168,9 @@ INSERT INTO questions (
   1
 );
 
--- Seed one submission (aligned with client/src/data/mockSubmissions.js)
 INSERT INTO submissions (
-  id, exam_id, student_id, answers, score, max_score, percentage, status, submitted_at
+  id, exam_id, student_id, answers, score, max_score, percentage, status,
+  submitted_at
 ) VALUES
 (
   'd0000000-0000-4000-8000-000000000001',
