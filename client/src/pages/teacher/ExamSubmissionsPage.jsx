@@ -186,7 +186,7 @@ function ExamSubmissionsPage({ currentUser, onNavigate, params }) {
           ) : openEndedQuestions.length === 0 ? (
             <p>This submission has no open-ended answers to grade.</p>
           ) : (
-            <form onSubmit={handleGradeSubmission}>
+            <form className="manual-grading-form" onSubmit={handleGradeSubmission}>
               <h2>Manual grading</h2>
               {openEndedQuestions.map((question, index) => {
                 const answer = selectedSubmission.answers?.find(
@@ -194,13 +194,19 @@ function ExamSubmissionsPage({ currentUser, onNavigate, params }) {
                 )
 
                 return (
-                  <article className="take-question" key={question.id}>
-                    <h3>
+                  <article
+                    className="take-question grading-question"
+                    key={question.id}
+                  >
+                    <h3 className="grading-question-title">
                       {index + 1}. {question.text}
                     </h3>
-                    <p>{answer?.text || 'No answer provided.'}</p>
-                    <label>
-                      Points awarded (max {question.points})
+                    <div className="grading-answer">
+                      <span>Student answer</span>
+                      <p>{answer?.text || 'No answer provided.'}</p>
+                    </div>
+                    <label className="grading-field">
+                      <span>Points awarded (maximum {question.points})</span>
                       <input
                         max={question.points}
                         min="0"
@@ -218,10 +224,11 @@ function ExamSubmissionsPage({ currentUser, onNavigate, params }) {
                 )
               })}
 
-              <label>
-                Feedback
+              <label className="grading-field grading-feedback">
+                <span>Overall feedback</span>
                 <textarea
                   onChange={(event) => setFeedback(event.target.value)}
+                  placeholder="Write feedback for the student..."
                   rows="4"
                   value={feedback}
                 />

@@ -209,17 +209,25 @@ class ExamService {
 
   buildQuestions(examId, questions) {
     return questions.map((question, questionIndex) => {
-      const options = question.options.map((option, optionIndex) => ({
-        id: option.id || `${questionIndex}-${optionIndex}`,
-        text: option.text.trim(),
-      }))
+      const type = question.type || 'MULTIPLE_CHOICE'
+      const options =
+        type === 'OPEN_ENDED'
+          ? []
+          : (question.options || []).map((option, optionIndex) => ({
+              id: option.id || `${questionIndex}-${optionIndex}`,
+              text: option.text.trim(),
+            }))
 
       return new Question({
         id: question.id || crypto.randomUUID(),
         examId,
+        type,
         text: question.text.trim(),
         options,
-        correctOptionId: question.correctOptionId || options[0]?.id,
+        correctOptionId:
+          type === 'OPEN_ENDED'
+            ? null
+            : question.correctOptionId || options[0]?.id,
         points: Number(question.points) || 10,
       })
     })
@@ -227,16 +235,23 @@ class ExamService {
 
   toApiQuestions(questions) {
     return questions.map((question, questionIndex) => {
-      const options = question.options.map((option, optionIndex) => ({
-        id: option.id || `${questionIndex}-${optionIndex}`,
-        text: option.text.trim(),
-      }))
+      const type = question.type || 'MULTIPLE_CHOICE'
+      const options =
+        type === 'OPEN_ENDED'
+          ? []
+          : (question.options || []).map((option, optionIndex) => ({
+              id: option.id || `${questionIndex}-${optionIndex}`,
+              text: option.text.trim(),
+            }))
 
       return {
-        type: question.type || 'MULTIPLE_CHOICE',
+        type,
         text: question.text.trim(),
         options,
-        correctOptionId: question.correctOptionId || options[0]?.id || null,
+        correctOptionId:
+          type === 'OPEN_ENDED'
+            ? null
+            : question.correctOptionId || options[0]?.id || null,
         points: Number(question.points) || 10,
       }
     })

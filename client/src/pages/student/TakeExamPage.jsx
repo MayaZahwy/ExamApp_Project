@@ -31,6 +31,14 @@ function TakeExamPage({ currentUser, onNavigate, params }) {
     }))
   }
 
+  function isOpenEndedQuestion(question) {
+    return (
+      question.type === 'OPEN_ENDED' ||
+      !Array.isArray(question.options) ||
+      question.options.length === 0
+    )
+  }
+
   function formatTime(seconds) {
     const safeSeconds = Math.max(0, Number(seconds) || 0)
     const minutes = Math.floor(safeSeconds / 60)
@@ -143,6 +151,8 @@ function TakeExamPage({ currentUser, onNavigate, params }) {
   }
 
   if (result) {
+    const hasOpenEndedQuestions = exam.questions.some(isOpenEndedQuestion)
+
     return (
       <main className="page-shell">
         <section className="content-panel result-panel">
@@ -152,6 +162,12 @@ function TakeExamPage({ currentUser, onNavigate, params }) {
           <p>
             Score: {result.score} / {result.maxScore}
           </p>
+          {hasOpenEndedQuestions && (
+            <p className="result-pending-note" role="status">
+              This is not your final grade. Your teacher will review the
+              open-ended questions and publish the final grade.
+            </p>
+          )}
           <button type="button" onClick={() => onNavigate('/student/exams')}>
             Back to available exams
           </button>
@@ -176,19 +192,20 @@ function TakeExamPage({ currentUser, onNavigate, params }) {
 
       <form className="content-panel exam-taking-form" onSubmit={handleSubmit}>
         {exam.questions.map((question, questionIndex) => (
-          <fieldset className="take-question" key={question.id}>
-            <legend>
+          <section className="take-question" key={question.id}>
+            <h2 className="take-question-title">
               {questionIndex + 1}. {question.text}
-            </legend>
+            </h2>
 
-            {question.type === 'OPEN_ENDED' ? (
-              <label>
+            {isOpenEndedQuestion(question) ? (
+              <label className="open-ended-answer">
                 Your answer
                 <textarea
                   name={question.id}
                   onChange={(event) =>
                     selectAnswer(question.id, event.target.value)
                   }
+                  placeholder="Type your answer here..."
                   rows="4"
                   value={answers[question.id] ?? ''}
                 />
@@ -206,7 +223,7 @@ function TakeExamPage({ currentUser, onNavigate, params }) {
                 </label>
               ))
             )}
-          </fieldset>
+          </section>
         ))}
 
         <div className="form-actions">
