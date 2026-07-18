@@ -1,0 +1,166 @@
+classDiagram
+    direction TB
+
+    class User {
+        +id
+        +fullName
+        +email
+        +password
+        +role
+        +constructor(props)
+    }
+
+    class Exam {
+        +id
+        +title
+        +description
+        +teacherId
+        +durationMinutes
+        +questionIds
+        +status
+        +availableFrom
+        +availableUntil
+        +resultsPublished
+        +constructor(props)
+    }
+
+    class Question {
+        +id
+        +examId
+        +type
+        +text
+        +options
+        +correctOptionId
+        +points
+        +constructor(props)
+    }
+
+    class Submission {
+        +id
+        +examId
+        +studentId
+        +answers
+        +score
+        +maxScore
+        +percentage
+        +submittedAt
+        +status
+        +constructor(props)
+    }
+
+    class ConfigService {
+        +get(key)
+        +getAll()
+        +set(key, value)
+    }
+
+    class StorageService {
+        +getStorageKey(key)
+        +save(key, value)
+        +load(key, fallbackValue)
+        +remove(key)
+        +clear(keys)
+    }
+
+    class ApiService {
+        +get(path, options)
+        +post(path, body, options)
+        +put(path, body, options)
+        +patch(path, body, options)
+        +delete(path, options)
+        +request(path, options)
+    }
+
+    class MockApiService {
+        +getCollection(collectionName)
+        +saveCollection(collectionName, items)
+        +getAll(collectionName)
+        +getById(collectionName, id)
+        +create(collectionName, item)
+        +update(collectionName, id, updates)
+        +remove(collectionName, id)
+        +reset(collectionName)
+    }
+
+    class AuthService {
+        +login(credentials)
+        +register(registrationData)
+        +restoreSession()
+        +logout()
+        +getCurrentUser()
+        +setCurrentUser(user)
+        +getRedirectPath(user)
+        +setAuthSession(token, user)
+        +clearAuthSession()
+    }
+
+    class ExamService {
+        +getTeacherExams(teacherId)
+        +getExamForTeacher(examId, teacherId)
+        +getAvailableExams()
+        +getAvailableExamById(examId)
+        +createExam(teacherId, examData)
+        +updateExam(examId, teacherId, examData)
+        +updateStatus(examId, teacherId, nextStatus)
+        +publishResults(examId, teacherId)
+    }
+
+    class SubmissionService {
+        +getStudentSubmissions(studentId)
+        +getStudentResults(studentId)
+        +getExamSubmissions(examId, teacherId)
+        +getSubmissionById(submissionId)
+        +gradeSubmission(submissionId, questionGrades, feedback)
+        +submitExam(studentId, examId, selectedAnswers)
+    }
+
+    class LoggerService {
+        +debug(message, data)
+        +info(message, data)
+        +warn(message, data)
+        +error(message, data)
+    }
+
+    class NotifyService {
+        +subscribe(listener)
+        +success(message)
+        +error(message)
+        +show(type, message)
+    }
+
+    class RouteService {
+        +getRouteFromHash(hash)
+        +navigate(path)
+        +match(path)
+        +getRedirectPath(path, currentUser)
+        +resolve(path, currentUser)
+    }
+
+    Exam --> Question : questionIds
+    Question --> Exam : examId
+    User --> Exam : teacherId
+    User --> Submission : studentId
+    Exam --> Submission : examId
+
+    StorageService --> ConfigService : uses
+    ApiService --> StorageService : uses
+    MockApiService --> StorageService : uses
+    LoggerService --> ConfigService : uses
+    NotifyService --> LoggerService : uses
+    AuthService --> ApiService : uses
+    AuthService --> MockApiService : uses
+    AuthService --> StorageService : uses
+    AuthService --> ConfigService : uses
+    ExamService --> ApiService : uses
+    ExamService --> MockApiService : uses
+    ExamService --> ConfigService : uses
+    SubmissionService --> ApiService : uses
+    SubmissionService --> MockApiService : uses
+    SubmissionService --> ExamService : uses
+    SubmissionService --> ConfigService : uses
+    RouteService --> AuthService : uses
+
+    AuthService ..> User : mock register
+    ExamService ..> Exam : mock create
+    ExamService ..> Question : mock create
+    SubmissionService ..> Submission : mock submit

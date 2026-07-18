@@ -1,0 +1,36 @@
+sequenceDiagram
+    autonumber
+    actor User as "Teacher or Student"
+    participant LoginPage
+    participant App
+    participant AuthServiceFE as AuthService
+    participant ApiService
+    participant StorageService
+    participant Gateway
+    participant AuthController as "auth controller"
+    participant AuthLogin as "authService.login"
+    participant SignToken as signToken
+    participant DB as PostgreSQL
+
+    Note over User,DB: API mode only
+
+    User->>LoginPage: submit email and password
+    LoginPage->>App: onLogin(credentials)
+    App->>AuthServiceFE: login(credentials)
+    AuthServiceFE->>ApiService: post /api/auth/login
+    ApiService->>Gateway: POST /api/auth/login
+    Gateway->>AuthController: proxy /api/auth
+    AuthController->>AuthLogin: login(body)
+    AuthLogin->>DB: SELECT user by email
+    DB-->>AuthLogin: user row
+    AuthLogin->>AuthLogin: bcrypt.compare
+    AuthLogin->>SignToken: signToken(user)
+    SignToken-->>AuthLogin: JWT
+    AuthLogin-->>AuthController: token and user
+    AuthController-->>Gateway: 200 JSON
+    Gateway-->>ApiService: 200 JSON
+    ApiService-->>AuthServiceFE: token and user
+    AuthServiceFE->>StorageService: save authToken
+    AuthServiceFE->>StorageService: save currentUser
+    AuthServiceFE-->>App: safeUser
+    App-->>User: redirect by role

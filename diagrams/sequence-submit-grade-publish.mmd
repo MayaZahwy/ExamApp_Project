@@ -1,0 +1,73 @@
+sequenceDiagram
+    autonumber
+    actor Student
+    actor Lecturer
+    participant TakeExamPage
+    participant ExamSubmissionsPage
+    participant SubmissionServiceFE as SubmissionService
+    participant ExamServiceFE as ExamService
+    participant ApiService
+    participant Gateway
+    participant SubmissionsController as "submissions controller"
+    participant SubmissionsSubmit as submitExam
+    participant SubmissionsGrade as gradeSubmission
+    participant ExamsController as "exams controller"
+    participant ExamsAvailable as getAvailableExamById
+    participant ExamsPublish as publishExamResults
+    participant DB as PostgreSQL
+
+    Note over Student,DB: API mode with JWT via ApiService
+
+    Student->>TakeExamPage: submit answers
+    TakeExamPage->>SubmissionServiceFE: submitExam(studentId, examId, selectedAnswers)
+    SubmissionServiceFE->>ExamServiceFE: getAvailableExamById(examId)
+    ExamServiceFE->>ApiService: get /api/exams/available/:id
+    ApiService->>Gateway: GET /api/exams/available/:id
+    Gateway->>ExamsController: proxy /api/exams
+    ExamsController->>ExamsAvailable: getAvailableExamById(examId)
+    ExamsAvailable->>DB: load published exam
+    DB-->>ExamsAvailable: exam
+    ExamsAvailable-->>ExamsController: exam JSON
+    ExamsController-->>Gateway: response
+    Gateway-->>ApiService: exam JSON
+    ApiService-->>ExamServiceFE: exam JSON
+    ExamServiceFE-->>SubmissionServiceFE: exam
+    SubmissionServiceFE->>ApiService: post /api/submissions
+    ApiService->>Gateway: POST /api/submissions
+    Gateway->>SubmissionsController: proxy /api/submissions
+    SubmissionsController->>SubmissionsSubmit: submitExam(studentId, input)
+    SubmissionsSubmit->>DB: INSERT submission
+    DB-->>SubmissionsSubmit: submission
+    SubmissionsSubmit-->>SubmissionsController: submission JSON
+    SubmissionsController-->>Gateway: response
+    Gateway-->>ApiService: submission JSON
+    ApiService-->>SubmissionServiceFE: submission JSON
+    SubmissionServiceFE-->>TakeExamPage: submission JSON
+
+    Lecturer->>ExamSubmissionsPage: save grades and feedback
+    ExamSubmissionsPage->>SubmissionServiceFE: gradeSubmission(submissionId, questionGrades, feedback)
+    SubmissionServiceFE->>ApiService: patch /api/submissions/:id/grade
+    ApiService->>Gateway: PATCH /api/submissions/:id/grade
+    Gateway->>SubmissionsController: proxy /api/submissions
+    SubmissionsController->>SubmissionsGrade: gradeSubmission
+    SubmissionsGrade->>DB: UPDATE submission
+    DB-->>SubmissionsGrade: updated submission
+    SubmissionsGrade-->>SubmissionsController: submission JSON
+    SubmissionsController-->>Gateway: response
+    Gateway-->>ApiService: submission JSON
+    ApiService-->>SubmissionServiceFE: submission JSON
+    SubmissionServiceFE-->>ExamSubmissionsPage: submission JSON
+
+    Lecturer->>ExamSubmissionsPage: publish results
+    ExamSubmissionsPage->>ExamServiceFE: publishResults(examId, teacherId)
+    ExamServiceFE->>ApiService: post /api/exams/:id/publish-results
+    ApiService->>Gateway: POST /api/exams/:id/publish-results
+    Gateway->>ExamsController: proxy /api/exams
+    ExamsController->>ExamsPublish: publishExamResults(examId, teacherId)
+    ExamsPublish->>DB: UPDATE results_published
+    DB-->>ExamsPublish: updated exam
+    ExamsPublish-->>ExamsController: exam JSON
+    ExamsController-->>Gateway: response
+    Gateway-->>ApiService: exam JSON
+    ApiService-->>ExamServiceFE: exam JSON
+    ExamServiceFE-->>ExamSubmissionsPage: exam JSON

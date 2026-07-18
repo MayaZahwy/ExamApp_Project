@@ -1,0 +1,42 @@
+sequenceDiagram
+    autonumber
+    actor Lecturer
+    participant CreateExamPage
+    participant ExamStatusPage
+    participant ExamServiceFE as ExamService
+    participant ApiService
+    participant Gateway
+    participant ExamsController as "exams controller"
+    participant ExamsCreate as createExam
+    participant ExamsStatus as updateExamStatus
+    participant DB as PostgreSQL
+
+    Note over Lecturer,DB: API mode with JWT via ApiService
+
+    Lecturer->>CreateExamPage: submit exam form
+    CreateExamPage->>ExamServiceFE: createExam(teacherId, examData)
+    ExamServiceFE->>ApiService: post /api/exams
+    ApiService->>Gateway: POST /api/exams
+    Gateway->>ExamsController: proxy /api/exams
+    ExamsController->>ExamsCreate: createExam(teacherId, input)
+    ExamsCreate->>DB: INSERT exam and questions
+    DB-->>ExamsCreate: created rows
+    ExamsCreate-->>ExamsController: exam JSON
+    ExamsController-->>Gateway: response
+    Gateway-->>ApiService: exam JSON
+    ApiService-->>ExamServiceFE: exam JSON
+    ExamServiceFE-->>CreateExamPage: created exam
+
+    Lecturer->>ExamStatusPage: set status published
+    ExamStatusPage->>ExamServiceFE: updateStatus(examId, teacherId, published)
+    ExamServiceFE->>ApiService: patch /api/exams/:id/status
+    ApiService->>Gateway: PATCH /api/exams/:id/status
+    Gateway->>ExamsController: proxy /api/exams
+    ExamsController->>ExamsStatus: updateExamStatus(examId, teacherId, nextStatus)
+    ExamsStatus->>DB: UPDATE exams.status
+    DB-->>ExamsStatus: updated exam
+    ExamsStatus-->>ExamsController: exam JSON
+    ExamsController-->>Gateway: response
+    Gateway-->>ApiService: exam JSON
+    ApiService-->>ExamServiceFE: exam JSON
+    ExamServiceFE-->>ExamStatusPage: updated exam
